@@ -421,7 +421,32 @@
         function showError(message) {
             statusPill.textContent = "Failed";
             statusText.textContent = "Something went wrong during processing.";
-            errorText.textContent = message;
+            
+            // Detect common errors and provide helpful guidance
+            let helpText = message;
+            if (message.includes("All configured AI providers failed")) {
+                helpText = (
+                    "No AI providers are available. " +
+                    "Please configure at least one AI provider. " +
+                    "<a href='#' onclick='alert(\"See AI_SETUP.md for instructions. " +
+                    "Recommended: Configure OpenRouter or set GEMINI_API_KEY\")'>" +
+                    "Click for help</a>"
+                );
+            } else if (message.includes("Quota exceeded") || message.includes("rate limit")) {
+                helpText = (
+                    "AI provider quota exceeded. " +
+                    "Configure OpenRouter as a backup, or wait 24 hours. " +
+                    "See AI_SETUP.md for alternatives."
+                );
+            } else if (message.includes("not configured")) {
+                helpText = (
+                    "Required API key is missing. " +
+                    "Please configure an AI provider (.env file). " +
+                    "See AI_SETUP.md for setup instructions."
+                );
+            }
+            
+            errorText.innerHTML = helpText;
             errorText.classList.remove("hidden");
             progressBar.style.width = "100%";
             progressBar.classList.add("is-error");

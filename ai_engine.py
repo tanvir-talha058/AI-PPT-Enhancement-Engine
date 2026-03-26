@@ -27,6 +27,42 @@ from config import (
 logger = setup_logging(__name__)
 
 
+def validate_providers() -> list[str]:
+    """
+    Validate which AI providers are configured and available.
+    
+    Returns:
+        List of available provider names
+    """
+    available = []
+    
+    if GEMINI_API_KEY:
+        available.append("Gemini")
+        logger.info(f"Gemini configured: {GEMINI_MODEL}")
+    else:
+        logger.warning("Gemini not configured (GEMINI_API_KEY missing)")
+    
+    if OPENROUTER_API_KEY:
+        available.append("OpenRouter")
+        logger.info(f"OpenRouter configured: {OPENROUTER_MODEL}")
+    else:
+        logger.warning("OpenRouter not configured (OPENROUTER_API_KEY missing)")
+    
+    if HF_API_KEY:
+        available.append("HuggingFace")
+        logger.info(f"HuggingFace configured: {HF_MODEL}")
+    else:
+        logger.warning("HuggingFace not configured (HF_API_KEY missing)")
+    
+    if not available:
+        logger.error("ERROR: No AI providers configured! Set at least one:")
+        logger.error("  - GEMINI_API_KEY (recommended)")
+        logger.error("  - OPENROUTER_API_KEY (reliable fallback)")
+        logger.error("  - HF_API_KEY (free tier available)")
+    
+    return available
+
+
 SYSTEM_PROMPT_TEMPLATE = """You are a professional presentation expert.
 
 Task:
@@ -86,6 +122,19 @@ def call_ai(structured_data: dict[str, list[str]]) -> dict[str, list[str]]:
     """
     errors = []
     system_prompt = _build_system_prompt(structured_data)
+    
+    available = validate_providers()
+    if not available:
+        msg = (
+            "No AI providers configured. Please set environment variables:\n"
+            "  GEMINI_API_KEY = https://ai.google.dev\n"
+            "  OPENROUTER_API_KEY = https://openrouter.ai\n"
+            "  HF_API_KEY = https://huggingface.co/settings/tokens"
+        )
+        logger.error(msg)
+        raise RuntimeError(msg)
+    
+    logger.info(f"Available providers: {', '.join(available)}")
     logger.info("Attempting AI providers in order: Gemini, OpenRouter, HuggingFace")
 
     for provider in (_call_gemini, _call_openrouter, _call_huggingface):
@@ -101,7 +150,15 @@ def call_ai(structured_data: dict[str, list[str]]) -> dict[str, list[str]]:
 
     error_summary = " | ".join(errors)
     logger.error(f"All AI providers failed: {error_summary}")
-    raise RuntimeError("All configured AI providers failed. " + error_summary)
+    
+    guidance = (
+        "All configured AI providers failed. Solutions:\n"
+        "1. Gemini free tier exhausted: Enable paid tier or configure backup providers\n"
+        "2. Missing OpenRouter: Set OPENROUTER_API_KEY (https://openrouter.ai)\n"
+        "3. HuggingFace error: Use supported model (mistralai/Mistral-7B-Instruct-v0.1)\n"
+        "\nError details: " + error_summary
+    )
+    raise RuntimeError(guidance)
 
 
 def _call_gemini(structured_data: dict[str, list[str]], system_prompt: str) -> dict[str, list[str]]:

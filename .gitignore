@@ -1,7 +1,16 @@
 __pycache__/
 *.pyc
+.pyc
 .env
+.env.example
 uploads/*
 outputs/*
+logs/*
+jobs.db
+restart.bat
+restart.ps1
+plan.md
+SOLUTION.md
 !uploads/.gitkeep
 !outputs/.gitkeep
+!logs/.gitkeep

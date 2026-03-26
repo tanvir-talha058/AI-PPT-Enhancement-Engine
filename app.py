@@ -29,6 +29,7 @@ from config import (
 )
 from jobs_db import delete_job, get_job, init_db, save_job
 from tasks import process_ppt
+from ai_engine import validate_providers
 
 logger = setup_logging(__name__)
 
@@ -231,6 +232,19 @@ def get_metrics():
         "local_jobs": local_count,
         "redis_jobs": redis_count,
         "queue_mode": "redis" if QUEUE_ENABLED else "threaded",
+    })
+
+
+@app.get("/config/providers")
+def check_providers():
+    """Diagnostic endpoint: check AI provider configuration."""
+    available = validate_providers()
+    return jsonify({
+        "configured_providers": available,
+        "provider_count": len(available),
+        "status": "ready" if available else "error",
+        "message": "All providers ready" if available else "No AI providers configured",
+        "help_url": "https://github.com/your-repo/docs/AI_SETUP.md",
     })
 
 
