@@ -1,4 +1,4 @@
-import threading
+﻿import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -29,6 +29,21 @@ redis_conn = None
 queue = None
 local_jobs: dict[str, dict] = {}
 local_jobs_lock = threading.Lock()
+
+
+DEFAULT_PREVIEW = {
+    "slide_key": "slide_1",
+    "before": [
+        "We need to improve the onboarding process for new enterprise clients.",
+        "There are a lot of delays in the approval workflow.",
+        "This slide talks about our growth opportunity in Asia Pacific.",
+    ],
+    "after": [
+        "Improve onboarding for new enterprise clients.",
+        "Approval workflow delays are slowing execution.",
+        "Asia Pacific remains a strong growth opportunity.",
+    ],
+}
 
 
 def _use_redis() -> bool:
@@ -110,6 +125,7 @@ def _serialize_result(result: dict | None, job_id: str) -> dict | None:
     return {
         "output_file": Path(result["output_path"]).name,
         "download_url": f"/download/{job_id}",
+        "preview": result.get("preview") or DEFAULT_PREVIEW,
     }
 
 
@@ -121,7 +137,11 @@ def _get_local_job(job_id: str) -> dict | None:
 
 @app.get("/")
 def index():
-    return render_template("index.html", queue_mode="redis" if QUEUE_ENABLED else "local")
+    return render_template(
+        "index.html",
+        queue_mode="redis" if QUEUE_ENABLED else "local",
+        default_preview=DEFAULT_PREVIEW,
+    )
 
 
 @app.get("/health")

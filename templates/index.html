@@ -59,22 +59,27 @@
                     </div>
 
                     <div class="preview-slide">
-                        <div class="preview-label">Before</div>
+                        <div class="preview-header">
+                            <div>
+                                <div class="preview-label">Before</div>
+                                <p class="preview-subtitle">Original slide language</p>
+                            </div>
+                            <div class="preview-badge">Live preview</div>
+                        </div>
                         <div class="preview-card muted">
-                            <div class="preview-title short"></div>
-                            <div class="preview-line wide"></div>
-                            <div class="preview-line"></div>
-                            <div class="preview-line medium"></div>
+                            <div id="before-lines" class="preview-text-list"></div>
                         </div>
 
                         <div class="preview-arrow">Refined</div>
 
-                        <div class="preview-label">After</div>
+                        <div class="preview-header">
+                            <div>
+                                <div class="preview-label">After</div>
+                                <p class="preview-subtitle">Enhanced slide language</p>
+                            </div>
+                        </div>
                         <div class="preview-card">
-                            <div class="preview-title"></div>
-                            <div class="preview-line accent wide"></div>
-                            <div class="preview-line accent"></div>
-                            <div class="preview-line accent medium"></div>
+                            <div id="after-lines" class="preview-text-list"></div>
                         </div>
                     </div>
                 </div>
@@ -163,6 +168,10 @@
         const progressBar = document.getElementById("progress-bar");
         const downloadLink = document.getElementById("download-link");
         const errorText = document.getElementById("error-text");
+        const beforeLines = document.getElementById("before-lines");
+        const afterLines = document.getElementById("after-lines");
+
+        const defaultPreview = {{ default_preview|tojson }};
 
         const progressByStatus = {
             queued: "18%",
@@ -177,6 +186,8 @@
             finished: "Completed",
             failed: "Failed"
         };
+
+        renderPreview(defaultPreview);
 
         fileInput.addEventListener("change", () => {
             fileName.textContent = fileInput.files.length ? fileInput.files[0].name : "No file selected";
@@ -266,6 +277,7 @@
                         downloadLink.href = payload.result.download_url;
                         downloadLink.classList.remove("hidden");
                         statusText.textContent = "Your enhanced presentation is ready for download.";
+                        renderPreview(payload.result.preview || defaultPreview);
                         return;
                     }
 
@@ -280,6 +292,24 @@
             };
 
             poll();
+        }
+
+        function renderPreview(preview) {
+            beforeLines.innerHTML = "";
+            afterLines.innerHTML = "";
+
+            const before = Array.isArray(preview.before) && preview.before.length ? preview.before : ["No source text available."];
+            const after = Array.isArray(preview.after) && preview.after.length ? preview.after : ["No enhanced text available yet."];
+
+            before.forEach((line) => beforeLines.appendChild(createPreviewItem(line, false)));
+            after.forEach((line) => afterLines.appendChild(createPreviewItem(line, true)));
+        }
+
+        function createPreviewItem(text, isAccent) {
+            const item = document.createElement("p");
+            item.className = isAccent ? "preview-text-item is-accent" : "preview-text-item";
+            item.textContent = text;
+            return item;
         }
 
         function showError(message) {

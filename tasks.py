@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 from uuid import uuid4
 
 from ai_engine import build_context, call_ai
@@ -19,4 +19,29 @@ def process_ppt(file_path: str) -> dict:
     output_path = OUTPUT_FOLDER / output_name
     replace_text(source_path, output_path, ai_output)
 
-    return {"output_path": str(output_path)}
+    return {
+        "output_path": str(output_path),
+        "preview": _build_preview(structured_data, ai_output),
+    }
+
+
+def _build_preview(original: dict[str, list[str]], enhanced: dict[str, list[str]]) -> dict:
+    slide_key = next((key for key in original if original.get(key)), None)
+    if slide_key is None:
+        return {
+            "slide_key": None,
+            "before": [],
+            "after": [],
+        }
+
+    before = [text.strip() for text in original.get(slide_key, []) if str(text).strip()][:3]
+    after = [text.strip() for text in enhanced.get(slide_key, []) if str(text).strip()][:3]
+
+    while len(after) < len(before):
+        after.append(before[len(after)])
+
+    return {
+        "slide_key": slide_key,
+        "before": before,
+        "after": after[: len(before)] if before else after,
+    }
