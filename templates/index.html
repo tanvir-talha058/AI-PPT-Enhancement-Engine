@@ -6,7 +6,7 @@
     <title>AI PPT Enhancement Engine</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
@@ -16,36 +16,42 @@
     <main class="shell">
         <section class="hero-panel">
             <div class="hero-copy">
-                <p class="eyebrow">Presentation Studio</p>
-                <h1>Sharper slides, cleaner language, same layout integrity.</h1>
+                <p class="eyebrow">✨ AI-Powered Enhancement</p>
+                <h1>Transform your decks into compelling narratives</h1>
                 <p class="lede">
-                    Refine PowerPoint content with AI while preserving bullets, structure, and slide balance.
-                    Built for fast internal decks, client reviews, and polished executive updates.
+                    Instantly elevate your PowerPoint presentations with AI-driven content enhancement. 
+                    Tighten messaging, strengthen language, and maintain perfect formatting—all automatically.
+                    Perfect for boardroom pitches, client proposals, and executive briefings.
                 </p>
 
                 <div class="hero-actions">
-                    <a class="hero-link" href="#workspace">Upload a presentation</a>
+                    <a class="hero-link" href="#workspace">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="margin-right: 8px;">
+                            <path d="M10 1v13m6-6l-6 6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Start Enhancing
+                    </a>
                     <div class="mode-chip">
                         <span class="mode-dot"></span>
-                        <span>Queue: {{ queue_mode }} | AI: {{ ai_provider }}</span>
+                        <span class="mode-text">Queue: <strong>{{ queue_mode }}</strong> | AI: <strong>{{ ai_provider }}</strong></span>
                     </div>
                 </div>
 
                 <div class="signal-grid">
                     <article class="signal-card">
-                        <span class="signal-kicker">Output Quality</span>
-                        <strong>Professional tone</strong>
-                        <p>Improves clarity and flow without changing slide structure.</p>
+                        <span class="signal-kicker">🎯 Content Refinement</span>
+                        <strong>Smarter messaging</strong>
+                        <p>Eliminate redundancy, strengthen arguments, and perfect your executive tone.</p>
                     </article>
                     <article class="signal-card">
-                        <span class="signal-kicker">Safe Editing</span>
-                        <strong>Layout preserved</strong>
-                        <p>Keeps text mapping aligned to your existing presentation shapes.</p>
+                        <span class="signal-kicker">🔒 Format Protection</span>
+                        <strong>Pixel-perfect output</strong>
+                        <p>Your slide structure, formatting, and design stay exactly as intended.</p>
                     </article>
                     <article class="signal-card">
-                        <span class="signal-kicker">Workflow</span>
-                        <strong>Upload to download</strong>
-                        <p>One streamlined path for enhancement, status tracking, and export.</p>
+                        <span class="signal-kicker">⚡ Instant Results</span>
+                        <strong>Minutes, not hours</strong>
+                        <p>AI processing with real-time status updates and one-click download.</p>
                     </article>
                 </div>
             </div>
@@ -89,11 +95,12 @@
         <section id="workspace" class="workspace">
             <div class="section-heading">
                 <div>
-                    <p class="section-label">Workspace</p>
-                    <h2>Upload, enhance, and download in one clean flow.</h2>
+                    <p class="section-label">How it Works</p>
+                    <h2>Three simple steps to polish perfection</h2>
                 </div>
                 <p class="section-copy">
-                    Choose a `.pptx` file and the engine will process the content while preserving your deck layout.
+                    Upload your PowerPoint, watch the AI work its magic, and download your enhanced deck. 
+                    No setup required—just drop your file and let our engine refine your message.
                 </p>
             </div>
 
@@ -102,15 +109,20 @@
                     <form id="upload-form" class="upload-form">
                         <label for="ppt-file" id="dropzone" class="dropzone">
                             <input id="ppt-file" name="file" type="file" accept=".pptx" required>
-                            <span class="dropzone-icon">PPTX</span>
+                            <span class="dropzone-icon">📊 PPTX</span>
                             <span class="dropzone-title">Drop your presentation here</span>
-                            <span class="dropzone-copy">or click to browse your files</span>
+                            <span class="dropzone-copy">or click to select a file (up to 50MB)</span>
                             <span id="file-name" class="file-name">No file selected</span>
                         </label>
 
                         <div class="form-row">
-                            <button id="submit-button" type="submit">Enhance Presentation</button>
-                            <p class="form-note">Best for proposal decks, internal updates, and client presentations.</p>
+                            <button id="submit-button" type="submit">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="margin-right: 8px;">
+                                    <path d="M9 12l2 2 4-4m7 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                Enhance My Presentation
+                            </button>
+                            <p class="form-note">💡 Works best with presentations under 10MB. All formats preserved during enhancement.</p>
                         </div>
                     </form>
                 </section>
@@ -118,36 +130,43 @@
                 <aside class="insight-panel">
                     <div id="status-card" class="status-card hidden" aria-live="polite">
                         <div class="status-header">
-                            <p class="status-label">Processing status</p>
+                            <p class="status-label">⚙️ Processing</p>
                             <span id="status-pill" class="status-pill">Queued</span>
                         </div>
 
-                        <p id="status-text" class="status-text">Waiting to start API enhancement...</p>
+                        <p id="status-text" class="status-text">Waiting to start AI enhancement...</p>
 
                         <div class="progress-track">
                             <div id="progress-bar" class="progress-bar"></div>
                         </div>
 
-                        <a id="download-link" class="download-link hidden" href="#">Download enhanced PPT</a>
+                        <a id="download-link" class="download-link hidden" href="#">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 6px;">
+                                <path d="M12 2v13m0 0l-4-4m4 4l4-4m-7+8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Download Your Enhanced Deck
+                        </a>
                         <p id="error-text" class="error-text hidden"></p>
                     </div>
 
                     <div class="insight-stack">
                         <article class="mini-panel">
-                            <p class="mini-label">What gets improved</p>
+                            <p class="mini-label">✨ What Gets Improved</p>
                             <ul class="mini-list">
-                                <li>Wordy bullets become tighter and clearer</li>
-                                <li>Weak phrasing shifts to a more executive tone</li>
-                                <li>Slide structure and paragraph counts stay aligned</li>
+                                <li>Tighten verbose bullets into clear, punchy messages</li>
+                                <li>Shift passive voice to direct, commanding language</li>
+                                <li>Maintain perfect alignment with your slide structure</li>
+                                <li>Preserve all formatting, colors, and design elements</li>
                             </ul>
                         </article>
 
                         <article class="mini-panel">
-                            <p class="mini-label">Designed for</p>
+                            <p class="mini-label">🎯 Perfect For</p>
                             <ul class="mini-list">
-                                <li>Strategy decks</li>
-                                <li>Sales presentations</li>
-                                <li>Internal review slides</li>
+                                <li>Executive boardroom presentations</li>
+                                <li>Client proposals and pitch decks</li>
+                                <li>Internal strategy updates</li>
+                                <li>Professional reports and briefings</li>
                             </ul>
                         </article>
                     </div>
@@ -187,8 +206,8 @@
 
         const labelByStatus = {
             queued: "Queued",
-            started: "In Progress",
-            finished: "Completed",
+            started: "Enhancing",
+            finished: "Complete ✓",
             failed: "Failed"
         };
 
@@ -285,7 +304,7 @@
 
                 currentJobId = payload.job_id;
                 statusPill.textContent = "Queued";
-                statusText.textContent = `Job created. Processing in ${payload.mode} queue mode with live AI enhancement.`;
+                statusText.textContent = `📋 Your presentation is in the queue. Processing with ${payload.mode} mode using our AI enhancement engine.`;
                 progressBar.style.width = "18%";
                 
                 // Add cancel button
@@ -366,13 +385,21 @@
 
                     const status = payload.status;
                     statusPill.textContent = labelByStatus[status] || "Running";
-                    statusText.textContent = `Status: ${labelByStatus[status] || status}. Building dynamic AI output from your deck content.`;
+                    
+                    const statusMessages = {
+                        queued: "📋 Your deck is queued for processing. Sit tight—we'll start enhancement shortly.",
+                        started: "🚀 AI is now refining your presentation content. Analyzing and improving each slide...",
+                        finished: "✅ All done! Your enhanced presentation is ready. Click the button below to download your polished deck.",
+                        default: "⚙️ Processing your presentation with advanced AI enhancement..."
+                    };
+                    
+                    statusText.textContent = statusMessages[status] || statusMessages.default;
                     progressBar.style.width = progressByStatus[status] || "45%";
 
                     if (status === "finished" && payload.result) {
                         downloadLink.href = payload.result.download_url;
                         downloadLink.classList.remove("hidden");
-                        statusText.textContent = "Your enhanced presentation is ready for download.";
+                        statusText.textContent = "🎉 Perfect! Your enhanced presentation is ready to download and use immediately.";
                         renderPreview(payload.result.preview || defaultPreview);
                         pollingActive = false;
                         removeCancelButton();
@@ -420,29 +447,34 @@
 
         function showError(message) {
             statusPill.textContent = "Failed";
-            statusText.textContent = "Something went wrong during processing.";
+            statusText.textContent = "⚠️ Oops! Something went wrong during processing. The team has been notified.";
             
             // Detect common errors and provide helpful guidance
-            let helpText = message;
+            let helpText = `<strong>Error:</strong> ${message}`;
             if (message.includes("All configured AI providers failed")) {
                 helpText = (
-                    "No AI providers are available. " +
-                    "Please configure at least one AI provider. " +
-                    "<a href='#' onclick='alert(\"See AI_SETUP.md for instructions. " +
-                    "Recommended: Configure OpenRouter or set GEMINI_API_KEY\")'>" +
-                    "Click for help</a>"
+                    "❌ <strong>No AI providers are available.</strong> " +
+                    "Please configure at least one AI provider (Gemini, OpenRouter, or HuggingFace). " +
+                    "See the setup documentation for step-by-step instructions."
                 );
             } else if (message.includes("Quota exceeded") || message.includes("rate limit")) {
                 helpText = (
-                    "AI provider quota exceeded. " +
-                    "Configure OpenRouter as a backup, or wait 24 hours. " +
-                    "See AI_SETUP.md for alternatives."
+                    "⏱️ <strong>AI provider quota exceeded.</strong> " +
+                    "Your current provider has hit its rate limit. " +
+                    "Try again in a few moments, or configure OpenRouter as a backup provider in your .env file."
                 );
             } else if (message.includes("not configured")) {
                 helpText = (
-                    "Required API key is missing. " +
-                    "Please configure an AI provider (.env file). " +
-                    "See AI_SETUP.md for setup instructions."
+                    "🔑 <strong>Missing API key.</strong> " +
+                    "Please configure an AI provider by adding API keys to your .env file. " +
+                    "Recommended: Start with OpenRouter or Gemini for best results."
+                );
+            } else if (message.includes("File")) {
+                helpText = (
+                    "📁 <strong>File issue detected.</strong> " +
+                    "- Ensure your file is a valid .pptx (PowerPoint) file<br>" +
+                    "- File size must be under 50MB<br>" +
+                    "- Try re-saving your presentation and uploading again"
                 );
             }
             
