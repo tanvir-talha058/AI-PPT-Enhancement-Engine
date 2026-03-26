@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -27,7 +27,7 @@
                     <a class="hero-link" href="#workspace">Upload a presentation</a>
                     <div class="mode-chip">
                         <span class="mode-dot"></span>
-                        <span>Mode: {{ queue_mode }}</span>
+                        <span>Queue: {{ queue_mode }} | AI: {{ ai_provider }}</span>
                     </div>
                 </div>
 
@@ -122,7 +122,7 @@
                             <span id="status-pill" class="status-pill">Queued</span>
                         </div>
 
-                        <p id="status-text" class="status-text">Waiting to start...</p>
+                        <p id="status-text" class="status-text">Waiting to start API enhancement...</p>
 
                         <div class="progress-track">
                             <div id="progress-bar" class="progress-bar"></div>
@@ -172,6 +172,11 @@
         const afterLines = document.getElementById("after-lines");
 
         const defaultPreview = {{ default_preview|tojson }};
+        const MAX_FILE_SIZE_MB = 50;
+        const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+        
+        let currentJobId = null;
+        let pollingActive = false;
 
         const progressByStatus = {
             queued: "18%",
@@ -190,7 +195,22 @@
         renderPreview(defaultPreview);
 
         fileInput.addEventListener("change", () => {
-            fileName.textContent = fileInput.files.length ? fileInput.files[0].name : "No file selected";
+            if (fileInput.files.length) {
+                const file = fileInput.files[0];
+                fileName.textContent = file.name;
+                
+                if (file.size > MAX_FILE_SIZE_BYTES) {
+                    fileName.style.color = "var(--red)";
+                    fileName.textContent += ` (${(file.size / 1024 / 1024).toFixed(1)}MB - too large!)`;
+                    submitButton.disabled = true;
+                } else {
+                    fileName.style.color = "inherit";
+                    submitButton.disabled = false;
+                }
+            } else {
+                fileName.textContent = "No file selected";
+                submitButton.disabled = false;
+            }
         });
 
         ["dragenter", "dragover"].forEach((eventName) => {
@@ -213,7 +233,17 @@
             }
 
             fileInput.files = event.dataTransfer.files;
-            fileName.textContent = event.dataTransfer.files[0].name;
+            const file = event.dataTransfer.files[0];
+            fileName.textContent = file.name;
+            
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                fileName.style.color = "var(--red)";
+                fileName.textContent += ` (${(file.size / 1024 / 1024).toFixed(1)}MB - too large!)`;
+                submitButton.disabled = true;
+            } else {
+                fileName.style.color = "inherit";
+                submitButton.disabled = false;
+            }
         });
 
         form.addEventListener("submit", async (event) => {
@@ -222,9 +252,15 @@
             if (!fileInput.files.length) {
                 return;
             }
+            
+            const file = fileInput.files[0];
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                showError(`File is too large. Maximum size is ${MAX_FILE_SIZE_MB}MB.`);
+                return;
+            }
 
             const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
+            formData.append("file", file);
 
             submitButton.disabled = true;
             submitButton.textContent = "Uploading...";
@@ -247,9 +283,14 @@
                     throw new Error(payload.error || "Upload failed");
                 }
 
+                currentJobId = payload.job_id;
                 statusPill.textContent = "Queued";
-                statusText.textContent = `Job created. Running in ${payload.mode} mode.`;
+                statusText.textContent = `Job created. Processing in ${payload.mode} queue mode with live AI enhancement.`;
                 progressBar.style.width = "18%";
+                
+                // Add cancel button
+                addCancelButton(payload.job_id);
+                
                 pollStatus(payload.job_id);
             } catch (error) {
                 showError(error.message);
@@ -259,8 +300,63 @@
             }
         });
 
+        function addCancelButton(jobId) {
+            const existing = document.getElementById("cancel-button");
+            if (existing) {
+                existing.remove();
+            }
+            
+            const cancelBtn = document.createElement("button");
+            cancelBtn.id = "cancel-button";
+            cancelBtn.type = "button";
+            cancelBtn.textContent = "Cancel Job";
+            cancelBtn.style.cssText = "margin-left: 10px; background: var(--red); color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;";
+            cancelBtn.onclick = async (e) => {
+                e.preventDefault();
+                cancelBtn.disabled = true;
+                cancelBtn.textContent = "Cancelling...";
+                
+                try {
+                    const response = await fetch(`/job/${jobId}`, {
+                        method: "DELETE"
+                    });
+                    
+                    if (response.ok) {
+                        pollingActive = false;
+                        statusPill.textContent = "Cancelled";
+                        statusText.textContent = "Job has been cancelled.";
+                        cancelBtn.remove();
+                    } else {
+                        throw new Error("Could not cancel job");
+                    }
+                } catch (error) {
+                    showError(`Cancel failed: ${error.message}`);
+                    cancelBtn.disabled = false;
+                    cancelBtn.textContent = "Cancel Job";
+                }
+            };
+            
+            const actionContainer = document.querySelector(".form-row");
+            if (actionContainer) {
+                actionContainer.appendChild(cancelBtn);
+            }
+        }
+
         async function pollStatus(jobId) {
+            pollingActive = true;
+            let pollCount = 0;
+            const maxPolls = 24 * 60 * 60 / 1.5; // 24 hours at 1.5s interval
+            
             const poll = async () => {
+                if (!pollingActive || pollCount++ > maxPolls) {
+                    if (!pollingActive) {
+                        logger.info("Polling stopped by user");
+                    } else {
+                        showError("Job polling timeout (24 hours exceeded)");
+                    }
+                    return;
+                }
+                
                 try {
                     const response = await fetch(`/status/${jobId}`);
                     const payload = await response.json();
@@ -270,7 +366,7 @@
 
                     const status = payload.status;
                     statusPill.textContent = labelByStatus[status] || "Running";
-                    statusText.textContent = `Status: ${labelByStatus[status] || status}`;
+                    statusText.textContent = `Status: ${labelByStatus[status] || status}. Building dynamic AI output from your deck content.`;
                     progressBar.style.width = progressByStatus[status] || "45%";
 
                     if (status === "finished" && payload.result) {
@@ -278,6 +374,8 @@
                         downloadLink.classList.remove("hidden");
                         statusText.textContent = "Your enhanced presentation is ready for download.";
                         renderPreview(payload.result.preview || defaultPreview);
+                        pollingActive = false;
+                        removeCancelButton();
                         return;
                     }
 
@@ -288,10 +386,18 @@
                     window.setTimeout(poll, 1500);
                 } catch (error) {
                     showError(error.message);
+                    pollingActive = false;
                 }
             };
 
             poll();
+        }
+
+        function removeCancelButton() {
+            const cancelBtn = document.getElementById("cancel-button");
+            if (cancelBtn) {
+                cancelBtn.remove();
+            }
         }
 
         function renderPreview(preview) {
@@ -319,6 +425,8 @@
             errorText.classList.remove("hidden");
             progressBar.style.width = "100%";
             progressBar.classList.add("is-error");
+            pollingActive = false;
+            removeCancelButton();
         }
     </script>
 </body>

@@ -422,6 +422,11 @@ h2 {
     font-weight: 700;
 }
 
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .form-row {
     display: flex;
     flex-wrap: wrap;

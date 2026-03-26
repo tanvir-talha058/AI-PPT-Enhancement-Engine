@@ -1,12 +1,18 @@
+"""AI provider integration and prompt management."""
+
 import json
 import re
+import time
 from typing import Any
 
 import requests
+from requests import Response
 
 from config import (
     GEMINI_API_KEY,
+    GEMINI_MAX_RETRIES,
     GEMINI_MODEL,
+    GEMINI_RETRY_DELAY_SECONDS,
     GEMINI_URL,
     HF_API_KEY,
     HF_MODEL,
@@ -15,30 +21,50 @@ from config import (
     OPENROUTER_MODEL,
     OPENROUTER_URL,
     REQUEST_TIMEOUT,
+    setup_logging,
 )
 
+logger = setup_logging(__name__)
 
-SYSTEM_PROMPT = """You are a professional presentation expert.
 
-Rules:
-- Improve clarity and impact
-- Keep meaning unchanged
-- Preserve the same number of bullets or paragraphs
-- Keep output length close to the original (+/- 20%)
-- Do not change structure
+SYSTEM_PROMPT_TEMPLATE = """You are a professional presentation expert.
 
-Return only valid JSON in this format:
-{
+Task:
+- Rewrite each slide's text to sound sharper, clearer, and more executive-ready
+- Keep the meaning unchanged
+- Preserve the same number of bullets or paragraphs for each slide
+- Keep the output length close to the original (+/- 20%)
+- Keep numbers, percentages, dates, named entities, and factual claims intact unless grammar requires tiny edits
+- Return concise presentation-ready copy, not explanations
+
+Deck guidance:
+{deck_guidance}
+
+Slide guidance:
+{slide_guidance}
+
+Return only valid JSON in this exact shape:
+{{
   "slide_1": ["...", "..."]
-}
+}}
 """
 
 
 def _gemini_model_path(model_name: str) -> str:
+    """Format Gemini model name with proper path prefix."""
     return model_name if model_name.startswith("models/") else f"models/{model_name}"
 
 
 def build_context(slides: list[dict]) -> dict[str, list[str]]:
+    """
+    Convert raw slide data into structured format for AI.
+    
+    Args:
+        slides: List of slide dictionaries from parser
+        
+    Returns:
+        dict mapping slide keys to lists of paragraph text
+    """
     context = {}
     for index, slide in enumerate(slides, start=1):
         context[f"slide_{index}"] = [paragraph["text"] for paragraph in slide["paragraphs"]]
@@ -46,18 +72,40 @@ def build_context(slides: list[dict]) -> dict[str, list[str]]:
 
 
 def call_ai(structured_data: dict[str, list[str]]) -> dict[str, list[str]]:
+    """
+    Call AI providers in priority order: Gemini → OpenRouter → HuggingFace.
+    
+    Args:
+        structured_data: Structured slide data from build_context
+        
+    Returns:
+        dict of enhanced text per slide
+        
+    Raises:
+        RuntimeError: If all providers fail
+    """
     errors = []
+    system_prompt = _build_system_prompt(structured_data)
+    logger.info("Attempting AI providers in order: Gemini, OpenRouter, HuggingFace")
 
     for provider in (_call_gemini, _call_openrouter, _call_huggingface):
         try:
-            return provider(structured_data)
+            logger.info(f"Trying {provider.__name__}...")
+            result = provider(structured_data, system_prompt)
+            logger.info(f"{provider.__name__} succeeded")
+            return result
         except Exception as exc:
-            errors.append(f"{provider.__name__}: {exc}")
+            error_msg = f"{provider.__name__}: {exc}"
+            errors.append(error_msg)
+            logger.warning(error_msg)
 
-    return _local_fallback(structured_data, errors)
+    error_summary = " | ".join(errors)
+    logger.error(f"All AI providers failed: {error_summary}")
+    raise RuntimeError("All configured AI providers failed. " + error_summary)
 
 
-def _call_gemini(structured_data: dict[str, list[str]]) -> dict[str, list[str]]:
+def _call_gemini(structured_data: dict[str, list[str]], system_prompt: str) -> dict[str, list[str]]:
+    """Call Gemini API with rate-limit retry logic."""
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is not configured")
 
@@ -66,31 +114,33 @@ def _call_gemini(structured_data: dict[str, list[str]]) -> dict[str, list[str]]:
             {
                 "parts": [
                     {
-                        "text": f"{SYSTEM_PROMPT}\n\nInput JSON:\n{json.dumps(structured_data, ensure_ascii=True)}"
+                        "text": f"{system_prompt}\n\nInput JSON:\n{json.dumps(structured_data, ensure_ascii=True)}"
                     }
                 ]
             }
         ]
     }
-    response = requests.post(
+    response = _post_with_rate_limit_retry(
         f"{GEMINI_URL}/{_gemini_model_path(GEMINI_MODEL)}:generateContent?key={GEMINI_API_KEY}",
-        json=payload,
-        timeout=REQUEST_TIMEOUT,
+        payload,
+        max_retries=GEMINI_MAX_RETRIES,
+        retry_delay_seconds=GEMINI_RETRY_DELAY_SECONDS,
     )
-    response.raise_for_status()
     data = response.json()
     text = data["candidates"][0]["content"]["parts"][0]["text"]
+    logger.debug("Gemini response received and parsed")
     return _normalize_ai_output(_extract_json_object(text), structured_data)
 
 
-def _call_openrouter(structured_data: dict[str, list[str]]) -> dict[str, list[str]]:
+def _call_openrouter(structured_data: dict[str, list[str]], system_prompt: str) -> dict[str, list[str]]:
+    """Call OpenRouter API with JSON mode."""
     if not OPENROUTER_API_KEY:
         raise RuntimeError("OPENROUTER_API_KEY is not configured")
 
     payload = {
         "model": OPENROUTER_MODEL,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps(structured_data, ensure_ascii=True)},
         ],
         "response_format": {"type": "json_object"},
@@ -107,14 +157,16 @@ def _call_openrouter(structured_data: dict[str, list[str]]) -> dict[str, list[st
     response.raise_for_status()
     data = response.json()
     text = data["choices"][0]["message"]["content"]
+    logger.debug("OpenRouter response received and parsed")
     return _normalize_ai_output(_extract_json_object(text), structured_data)
 
 
-def _call_huggingface(structured_data: dict[str, list[str]]) -> dict[str, list[str]]:
+def _call_huggingface(structured_data: dict[str, list[str]], system_prompt: str) -> dict[str, list[str]]:
+    """Call HuggingFace Inference API."""
     if not HF_API_KEY:
         raise RuntimeError("HF_API_KEY is not configured")
 
-    prompt = f"{SYSTEM_PROMPT}\n\nInput JSON:\n{json.dumps(structured_data, ensure_ascii=True)}"
+    prompt = f"{system_prompt}\n\nInput JSON:\n{json.dumps(structured_data, ensure_ascii=True)}"
     response = requests.post(
         f"{HF_URL}/{HF_MODEL}",
         headers={"Authorization": f"Bearer {HF_API_KEY}"},
@@ -129,10 +181,12 @@ def _call_huggingface(structured_data: dict[str, list[str]]) -> dict[str, list[s
     else:
         raise RuntimeError(f"Unexpected HuggingFace response: {data}")
 
+    logger.debug("HuggingFace response received and parsed")
     return _normalize_ai_output(_extract_json_object(text), structured_data)
 
 
 def _extract_json_object(text: str) -> dict[str, Any]:
+    """Extract JSON object from text (handles markdown code blocks, etc)."""
     match = re.search(r"\{.*\}", text, flags=re.DOTALL)
     if not match:
         raise RuntimeError("Model response did not contain JSON")
@@ -140,6 +194,10 @@ def _extract_json_object(text: str) -> dict[str, Any]:
 
 
 def _normalize_ai_output(ai_output: dict[str, Any], original: dict[str, list[str]]) -> dict[str, list[str]]:
+    """
+    Normalize AI output to match input structure.
+    Falls back to original if structure mismatch detected.
+    """
     normalized = {}
     for slide_key, paragraphs in original.items():
         candidate = ai_output.get(slide_key, paragraphs)
@@ -148,138 +206,161 @@ def _normalize_ai_output(ai_output: dict[str, Any], original: dict[str, list[str
 
         cleaned = [str(item).strip() for item in candidate if str(item).strip()]
         if len(cleaned) != len(paragraphs):
+            logger.warning(f"Output mismatch for {slide_key}: expected {len(paragraphs)}, got {len(cleaned)}")
             cleaned = paragraphs
         normalized[slide_key] = cleaned
     return normalized
 
 
-def _local_fallback(structured_data: dict[str, list[str]], errors: list[str]) -> dict[str, list[str]]:
-    output = {}
+def _post_with_rate_limit_retry(
+    url: str,
+    payload: dict[str, Any],
+    *,
+    max_retries: int,
+    retry_delay_seconds: float,
+) -> Response:
+    """
+    POST with automatic rate-limit (429) retry handling.
+    
+    Args:
+        url: Target URL
+        payload: JSON payload
+        max_retries: Maximum retry attempts
+        retry_delay_seconds: Base delay between retries (exponential backoff)
+        
+    Returns:
+        Response object
+    """
+    last_error: Exception | None = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                timeout=REQUEST_TIMEOUT,
+            )
+
+            if response.status_code == 429:
+                if attempt >= max_retries:
+                    raise RuntimeError(_build_rate_limit_message(response))
+
+                delay = _next_retry_delay(response, retry_delay_seconds, attempt)
+                logger.warning(f"Rate limited, retrying in {delay}s (attempt {attempt + 1}/{max_retries})")
+                time.sleep(delay)
+                continue
+
+            response.raise_for_status()
+            return response
+        except requests.HTTPError as exc:
+            last_error = exc
+            if exc.response is not None and exc.response.status_code == 429:
+                if attempt >= max_retries:
+                    raise RuntimeError(_build_rate_limit_message(exc.response)) from exc
+
+                delay = _next_retry_delay(exc.response, retry_delay_seconds, attempt)
+                logger.warning(f"Rate limited, retrying in {delay}s (attempt {attempt + 1}/{max_retries})")
+                time.sleep(delay)
+                continue
+
+            raise
+        except requests.RequestException as exc:
+            last_error = exc
+            raise RuntimeError(f"Request failed: {exc}") from exc
+
+    if last_error is not None:
+        raise RuntimeError(str(last_error)) from last_error
+
+    raise RuntimeError("Request failed without a response")
+
+
+def _next_retry_delay(response: Response, base_delay: float, attempt: int) -> float:
+    retry_after_header = response.headers.get("Retry-After", "").strip()
+    if retry_after_header.isdigit():
+        return max(float(retry_after_header), 1.0)
+    return max(base_delay * (2**attempt), 1.0)
+
+
+def _build_rate_limit_message(response: Response) -> str:
+    detail = ""
+    try:
+        payload = response.json()
+        if isinstance(payload, dict):
+            detail = (
+                payload.get("error", {}).get("message")
+                if isinstance(payload.get("error"), dict)
+                else payload.get("message", "")
+            )
+    except ValueError:
+        detail = response.text.strip()
+
+    suffix = f" Details: {detail}" if detail else ""
+    return (
+        "Gemini API rate limit reached. Wait a moment and retry, "
+        "or configure OPENROUTER_API_KEY / HF_API_KEY as a backup provider."
+        + suffix
+    )
+
+
+def _build_system_prompt(structured_data: dict[str, list[str]]) -> str:
+    deck_guidance = _build_deck_guidance(structured_data)
+    slide_guidance = _build_slide_guidance(structured_data)
+    return SYSTEM_PROMPT_TEMPLATE.format(
+        deck_guidance=deck_guidance,
+        slide_guidance=slide_guidance,
+    )
+
+
+def _build_deck_guidance(structured_data: dict[str, list[str]]) -> str:
+    slide_count = len(structured_data)
+    paragraph_count = sum(len(paragraphs) for paragraphs in structured_data.values())
+    short_lines = 0
+    numeric_lines = 0
+
+    for paragraphs in structured_data.values():
+        for paragraph in paragraphs:
+            text = str(paragraph).strip()
+            if not text:
+                continue
+            if len(text.split()) <= 8:
+                short_lines += 1
+            if re.search(r"\d", text):
+                numeric_lines += 1
+
+    guidance = [
+        f"- The deck contains {slide_count} slides and {paragraph_count} text segments.",
+        "- Keep the wording confident and presentation-ready.",
+    ]
+
+    if short_lines >= max(2, paragraph_count // 3):
+        guidance.append("- Many lines are headline-like or bullet-like, so prefer tight phrasing over full prose.")
+    if numeric_lines:
+        guidance.append("- Preserve all numbers and quantitative statements exactly.")
+
+    return "\n".join(guidance)
+
+
+def _build_slide_guidance(structured_data: dict[str, list[str]]) -> str:
+    guidance = []
     for slide_key, paragraphs in structured_data.items():
-        output[slide_key] = [_polish_sentence(paragraph) for paragraph in paragraphs]
+        non_empty = [str(paragraph).strip() for paragraph in paragraphs if str(paragraph).strip()]
+        if not non_empty:
+            guidance.append(f"- {slide_key}: leave empty strings untouched.")
+            continue
 
-    if errors:
-        output["_meta"] = [f"AI providers unavailable. Fallback used: {' | '.join(errors)}"]
+        traits = []
+        if len(non_empty) >= 3:
+            traits.append("maintain a crisp bullet cadence")
+        if any(re.search(r"\d", text) for text in non_empty):
+            traits.append("keep metrics and figures unchanged")
+        if any(len(text.split()) > 18 for text in non_empty):
+            traits.append("compress long sentences without losing meaning")
+        if all(len(text.split()) <= 8 for text in non_empty):
+            traits.append("treat lines like headlines or punchy bullets")
 
-    return output
+        if not traits:
+            traits.append("improve clarity while preserving structure")
 
+        guidance.append(f"- {slide_key}: " + "; ".join(traits) + ".")
 
-def _polish_sentence(text: str) -> str:
-    compact = " ".join(text.split())
-    if not compact:
-        return text
-
-    bullet_match = re.match(r"^(\s*[-*•]\s+)(.*)$", compact)
-    prefix = bullet_match.group(1) if bullet_match else ""
-    body = bullet_match.group(2) if bullet_match else compact
-
-    if body.isupper() and len(body.split()) <= 8:
-        polished = body.title()
-    else:
-        polished = _rewrite_phrase(body)
-
-    if prefix:
-        return f"{prefix}{polished}"
-    return polished
-
-
-def _rewrite_phrase(text: str) -> str:
-    sentence = text.strip()
-    if not sentence:
-        return text
-
-    sentence = sentence.rstrip(" .;:")
-    sentence = re.sub(r"\s+", " ", sentence)
-    sentence = _convert_weak_openings(sentence)
-
-    replacements = [
-        (r"\bwe should\b", "Prioritize"),
-        (r"\bin order to\b", "to"),
-        (r"\ba lot of\b", "many"),
-        (r"\bvery important\b", "critical"),
-        (r"\bmake sure\b", "ensure"),
-        (r"\bhas the ability to\b", "can"),
-        (r"\bis able to\b", "can"),
-        (r"\bthe purpose of this is to\b", "This helps"),
-        (r"\bdue to the fact that\b", "because"),
-        (r"\bfor the purpose of\b", "for"),
-        (r"\bimprove\b", "strengthen"),
-        (r"\butilize\b", "use"),
-        (r"\bleverage\b", "use"),
-    ]
-
-    for pattern, replacement in replacements:
-        sentence = re.sub(pattern, replacement, sentence, flags=re.IGNORECASE)
-
-    sentence = _tighten_opening(sentence)
-    sentence = _finalize_sentence(sentence)
-    return sentence
-
-
-def _convert_weak_openings(sentence: str) -> str:
-    patterns = [
-        (r"^we need to\s+improve\b", "Improve"),
-        (r"^we need to\s+increase\b", "Increase"),
-        (r"^we need to\s+reduce\b", "Reduce"),
-        (r"^we need to\s+build\b", "Build"),
-        (r"^we need to\s+create\b", "Create"),
-        (r"^we need to\s+develop\b", "Develop"),
-        (r"^we need to\s+", ""),
-        (r"^we want to\s+improve\b", "Improve"),
-        (r"^we want to\s+increase\b", "Increase"),
-        (r"^we want to\s+reduce\b", "Reduce"),
-        (r"^we want to\s+", ""),
-    ]
-
-    for pattern, replacement in patterns:
-        updated = re.sub(pattern, replacement, sentence, flags=re.IGNORECASE)
-        if updated != sentence:
-            return updated
-
-    return sentence
-
-
-def _tighten_opening(sentence: str) -> str:
-    lower = sentence.lower()
-
-    openings = [
-        ("this slide talks about ", ""),
-        ("this slide is about ", ""),
-        ("the goal is to ", "Goal: "),
-        ("our goal is to ", "Goal: "),
-        ("we are trying to ", ""),
-        ("we want to ", ""),
-        ("there is ", ""),
-        ("there are ", ""),
-    ]
-
-    for source, target in openings:
-        if lower.startswith(source):
-            sentence = target + sentence[len(source):]
-            break
-
-    if sentence.lower().startswith("goal: "):
-        return sentence
-
-    words = sentence.split()
-    if len(words) <= 8 and not re.search(r"[.!?]$", sentence):
-        return sentence.capitalize()
-
-    return sentence
-
-
-def _finalize_sentence(sentence: str) -> str:
-    sentence = sentence.strip(" -")
-    if not sentence:
-        return sentence
-
-    sentence = sentence[0].upper() + sentence[1:]
-
-    if len(sentence.split()) <= 8 and ":" not in sentence and sentence[-1].isalnum():
-        sentence = sentence.rstrip(".")
-        return sentence
-
-    if sentence[-1] not in ".!?":
-        sentence = f"{sentence}."
-
-    return sentence
+    return "\n".join(guidance)

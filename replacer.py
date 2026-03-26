@@ -1,9 +1,22 @@
+"""Text replacement in PowerPoint presentations."""
+
 from pathlib import Path
 
 from pptx import Presentation
 
 
 def replace_text(source_path: Path, output_path: Path, ai_output: dict[str, list[str]]) -> None:
+    """
+    Replace text in a presentation with AI-enhanced content.
+    
+    Maintains 1-to-1 paragraph mapping between slides and replacements.
+    Only modifies text content, preserves all formatting and shapes.
+    
+    Args:
+        source_path: Path to input .pptx file
+        output_path: Path to save output .pptx file
+        ai_output: Dict mapping slide keys to lists of replacement text
+    """
     presentation = Presentation(str(source_path))
 
     for slide_number, slide in enumerate(presentation.slides, start=1):

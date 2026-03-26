@@ -1,9 +1,23 @@
+"""PPT text extraction using python-pptx library."""
+
 from pathlib import Path
 
 from pptx import Presentation
 
 
 def extract_ppt(file_path: Path) -> list[dict]:
+    """
+    Extract text and metadata from a PowerPoint presentation.
+    
+    Args:
+        file_path: Path to .pptx file
+        
+    Returns:
+        List of slide dictionaries containing:
+        - slide_id: Unique slide identifier
+        - slide_index: Zero-based slide number
+        - paragraphs: List of paragraph objects with text and shape info
+    """
     presentation = Presentation(str(file_path))
     extracted = []
 
