@@ -1,0 +1,5 @@
+Flask==3.1.0
+redis==5.2.1
+rq==2.1.0
+python-pptx==1.0.2
+requests==2.32.3

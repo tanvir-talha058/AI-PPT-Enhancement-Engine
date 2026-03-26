@@ -1,0 +1,295 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI PPT Enhancement Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="page-glow page-glow-left"></div>
+    <div class="page-glow page-glow-right"></div>
+
+    <main class="shell">
+        <section class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">Presentation Studio</p>
+                <h1>Sharper slides, cleaner language, same layout integrity.</h1>
+                <p class="lede">
+                    Refine PowerPoint content with AI while preserving bullets, structure, and slide balance.
+                    Built for fast internal decks, client reviews, and polished executive updates.
+                </p>
+
+                <div class="hero-actions">
+                    <a class="hero-link" href="#workspace">Upload a presentation</a>
+                    <div class="mode-chip">
+                        <span class="mode-dot"></span>
+                        <span>Mode: {{ queue_mode }}</span>
+                    </div>
+                </div>
+
+                <div class="signal-grid">
+                    <article class="signal-card">
+                        <span class="signal-kicker">Output Quality</span>
+                        <strong>Professional tone</strong>
+                        <p>Improves clarity and flow without changing slide structure.</p>
+                    </article>
+                    <article class="signal-card">
+                        <span class="signal-kicker">Safe Editing</span>
+                        <strong>Layout preserved</strong>
+                        <p>Keeps text mapping aligned to your existing presentation shapes.</p>
+                    </article>
+                    <article class="signal-card">
+                        <span class="signal-kicker">Workflow</span>
+                        <strong>Upload to download</strong>
+                        <p>One streamlined path for enhancement, status tracking, and export.</p>
+                    </article>
+                </div>
+            </div>
+
+            <aside class="hero-preview">
+                <div class="preview-window">
+                    <div class="preview-bar">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+
+                    <div class="preview-slide">
+                        <div class="preview-label">Before</div>
+                        <div class="preview-card muted">
+                            <div class="preview-title short"></div>
+                            <div class="preview-line wide"></div>
+                            <div class="preview-line"></div>
+                            <div class="preview-line medium"></div>
+                        </div>
+
+                        <div class="preview-arrow">Refined</div>
+
+                        <div class="preview-label">After</div>
+                        <div class="preview-card">
+                            <div class="preview-title"></div>
+                            <div class="preview-line accent wide"></div>
+                            <div class="preview-line accent"></div>
+                            <div class="preview-line accent medium"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section id="workspace" class="workspace">
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">Workspace</p>
+                    <h2>Upload, enhance, and download in one clean flow.</h2>
+                </div>
+                <p class="section-copy">
+                    Choose a `.pptx` file and the engine will process the content while preserving your deck layout.
+                </p>
+            </div>
+
+            <div class="workspace-grid">
+                <section class="upload-panel">
+                    <form id="upload-form" class="upload-form">
+                        <label for="ppt-file" id="dropzone" class="dropzone">
+                            <input id="ppt-file" name="file" type="file" accept=".pptx" required>
+                            <span class="dropzone-icon">PPTX</span>
+                            <span class="dropzone-title">Drop your presentation here</span>
+                            <span class="dropzone-copy">or click to browse your files</span>
+                            <span id="file-name" class="file-name">No file selected</span>
+                        </label>
+
+                        <div class="form-row">
+                            <button id="submit-button" type="submit">Enhance Presentation</button>
+                            <p class="form-note">Best for proposal decks, internal updates, and client presentations.</p>
+                        </div>
+                    </form>
+                </section>
+
+                <aside class="insight-panel">
+                    <div id="status-card" class="status-card hidden" aria-live="polite">
+                        <div class="status-header">
+                            <p class="status-label">Processing status</p>
+                            <span id="status-pill" class="status-pill">Queued</span>
+                        </div>
+
+                        <p id="status-text" class="status-text">Waiting to start...</p>
+
+                        <div class="progress-track">
+                            <div id="progress-bar" class="progress-bar"></div>
+                        </div>
+
+                        <a id="download-link" class="download-link hidden" href="#">Download enhanced PPT</a>
+                        <p id="error-text" class="error-text hidden"></p>
+                    </div>
+
+                    <div class="insight-stack">
+                        <article class="mini-panel">
+                            <p class="mini-label">What gets improved</p>
+                            <ul class="mini-list">
+                                <li>Wordy bullets become tighter and clearer</li>
+                                <li>Weak phrasing shifts to a more executive tone</li>
+                                <li>Slide structure and paragraph counts stay aligned</li>
+                            </ul>
+                        </article>
+
+                        <article class="mini-panel">
+                            <p class="mini-label">Designed for</p>
+                            <ul class="mini-list">
+                                <li>Strategy decks</li>
+                                <li>Sales presentations</li>
+                                <li>Internal review slides</li>
+                            </ul>
+                        </article>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById("upload-form");
+        const fileInput = document.getElementById("ppt-file");
+        const fileName = document.getElementById("file-name");
+        const dropzone = document.getElementById("dropzone");
+        const submitButton = document.getElementById("submit-button");
+        const statusCard = document.getElementById("status-card");
+        const statusText = document.getElementById("status-text");
+        const statusPill = document.getElementById("status-pill");
+        const progressBar = document.getElementById("progress-bar");
+        const downloadLink = document.getElementById("download-link");
+        const errorText = document.getElementById("error-text");
+
+        const progressByStatus = {
+            queued: "18%",
+            started: "62%",
+            finished: "100%",
+            failed: "100%"
+        };
+
+        const labelByStatus = {
+            queued: "Queued",
+            started: "In Progress",
+            finished: "Completed",
+            failed: "Failed"
+        };
+
+        fileInput.addEventListener("change", () => {
+            fileName.textContent = fileInput.files.length ? fileInput.files[0].name : "No file selected";
+        });
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+            dropzone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                dropzone.classList.add("is-dragging");
+            });
+        });
+
+        ["dragleave", "drop"].forEach((eventName) => {
+            dropzone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                dropzone.classList.remove("is-dragging");
+            });
+        });
+
+        dropzone.addEventListener("drop", (event) => {
+            if (!event.dataTransfer.files.length) {
+                return;
+            }
+
+            fileInput.files = event.dataTransfer.files;
+            fileName.textContent = event.dataTransfer.files[0].name;
+        });
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            if (!fileInput.files.length) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            submitButton.disabled = true;
+            submitButton.textContent = "Uploading...";
+            statusCard.classList.remove("hidden");
+            downloadLink.classList.add("hidden");
+            errorText.classList.add("hidden");
+            progressBar.classList.remove("is-error");
+            statusPill.textContent = "Uploading";
+            statusText.textContent = "Uploading presentation...";
+            progressBar.style.width = "10%";
+
+            try {
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.error || "Upload failed");
+                }
+
+                statusPill.textContent = "Queued";
+                statusText.textContent = `Job created. Running in ${payload.mode} mode.`;
+                progressBar.style.width = "18%";
+                pollStatus(payload.job_id);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = "Enhance Presentation";
+            }
+        });
+
+        async function pollStatus(jobId) {
+            const poll = async () => {
+                try {
+                    const response = await fetch(`/status/${jobId}`);
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.error || "Unable to fetch job status");
+                    }
+
+                    const status = payload.status;
+                    statusPill.textContent = labelByStatus[status] || "Running";
+                    statusText.textContent = `Status: ${labelByStatus[status] || status}`;
+                    progressBar.style.width = progressByStatus[status] || "45%";
+
+                    if (status === "finished" && payload.result) {
+                        downloadLink.href = payload.result.download_url;
+                        downloadLink.classList.remove("hidden");
+                        statusText.textContent = "Your enhanced presentation is ready for download.";
+                        return;
+                    }
+
+                    if (status === "failed") {
+                        throw new Error(payload.error || "Processing failed");
+                    }
+
+                    window.setTimeout(poll, 1500);
+                } catch (error) {
+                    showError(error.message);
+                }
+            };
+
+            poll();
+        }
+
+        function showError(message) {
+            statusPill.textContent = "Failed";
+            statusText.textContent = "Something went wrong during processing.";
+            errorText.textContent = message;
+            errorText.classList.remove("hidden");
+            progressBar.style.width = "100%";
+            progressBar.classList.add("is-error");
+        }
+    </script>
+</body>
+</html>
