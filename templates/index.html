@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-EvRWyO9wgHHhZj8/hVv0jBjR3QH+XvNlY5cLxyLWbJvHlHE0nV8bLXPCj+EJ2Aq9bUxQwvO0pO1tMxj8Z4cJQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
@@ -128,10 +129,10 @@
                         </label>
 
                         <div class="form-row" id="form-actions">
-                            <button id="submit-button" class="primary-button" type="submit">
+                            <button id="submit-button" class="primary-button" type="submit" aria-label="Enhance your presentation">
                                 <span class="button-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" fill="none">
-                                        <path d="M12 4l2.2 5.8L20 12l-5.8 2.2L12 20l-2.2-5.8L4 12l5.8-2.2L12 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 4l2.2 5.8L20 12l-5.8 2.2L12 20l-2.2-5.8L4 12l5.8-2.2L12 4Z"/>
                                     </svg>
                                 </span>
                                 <span id="submit-button-label">Enhance My Presentation</span>
@@ -145,10 +146,10 @@
                     <div id="status-card" class="status-card hidden" aria-live="polite">
                         <div class="status-header">
                             <div>
-                                <p class="status-label">Processing</p>
+                                <p class="status-label">Processing Status</p>
                                 <p id="status-text" class="status-text">Waiting to start AI enhancement...</p>
                             </div>
-                            <span id="status-pill" class="status-pill">Queued</span>
+                            <span id="status-pill" class="status-pill status-pill-queued">Queued</span>
                         </div>
 
                         <div class="progress-track" aria-hidden="true">
@@ -166,7 +167,7 @@
                             </a>
                         </div>
 
-                        <div id="error-text" class="error-text hidden" role="alert"></div>
+                        <div id="error-text" class="error-text hidden" role="alert" aria-live="assertive"></div>
                     </div>
 
                     <div class="insight-stack">
@@ -248,6 +249,7 @@
             submitButtonLabel.textContent = label;
             submitButton.disabled = disabled;
             submitButton.setAttribute("aria-busy", disabled ? "true" : "false");
+            submitButton.setAttribute("aria-disabled", disabled ? "true" : "false");
         }
 
         function safeLower(value) {
@@ -278,11 +280,13 @@
             const extension = file.name.split(".").pop()?.toLowerCase();
             const isPptx = extension === "pptx";
             fileName.textContent = file.name;
+            fileName.setAttribute("title", file.name);
 
             if (!isPptx) {
                 fileName.style.color = "var(--red)";
                 fileName.textContent += " (invalid file type)";
                 submitButton.disabled = true;
+                submitButton.setAttribute("aria-invalid", "true");
                 return false;
             }
 
@@ -290,11 +294,13 @@
                 fileName.style.color = "var(--red)";
                 fileName.textContent += ` (${(file.size / 1024 / 1024).toFixed(1)}MB - too large)`;
                 submitButton.disabled = true;
+                submitButton.setAttribute("aria-invalid", "true");
                 return false;
             }
 
             fileName.style.color = "inherit";
             submitButton.disabled = false;
+            submitButton.removeAttribute("aria-invalid");
             return true;
         }
 
@@ -330,6 +336,7 @@
         function showError(message) {
             resetPolling();
             statusCard.classList.remove("hidden");
+            statusPill.className = "status-pill status-pill-error";
             statusPill.textContent = "Failed";
             statusText.textContent = "Something went wrong during processing. Review the details below and try again.";
             errorText.replaceChildren();
@@ -447,6 +454,13 @@
 
                     const status = payload.status;
                     statusPill.textContent = labelByStatus[status] || "Running";
+                    
+                    // Update pill styling based on status
+                    statusPill.className = "status-pill";
+                    if (status === "queued") statusPill.classList.add("status-pill-queued");
+                    else if (status === "started") statusPill.classList.add("status-pill-processing");
+                    else if (status === "finished") statusPill.classList.add("status-pill-complete");
+                    
                     progressBar.style.width = progressByStatus[status] || "48%";
 
                     const statusMessages = {
@@ -458,6 +472,8 @@
                     statusText.textContent = statusMessages[status] || statusMessages.default;
 
                     if (status === "finished" && payload.result) {
+                        statusPill.className = "status-pill status-pill-complete";
+                        statusPill.textContent = "Complete";
                         downloadLink.href = payload.result.download_url;
                         downloadLink.classList.remove("hidden");
                         renderPreview(payload.result.preview || defaultPreview);
@@ -525,9 +541,11 @@
             const formData = new FormData();
             formData.append("file", file);
 
+            uploadForm.classList.add("is-submitting");
             setSubmitState("Uploading...", true);
             statusCard.classList.remove("hidden");
             resetStatusCard();
+            statusPill.className = "status-pill status-pill-queued";
             statusPill.textContent = "Uploading";
             statusText.textContent = "Uploading presentation...";
             progressBar.style.width = "10%";
@@ -555,6 +573,7 @@
             } catch (error) {
                 showError(error.message);
             } finally {
+                uploadForm.classList.remove("is-submitting");
                 setSubmitState("Enhance My Presentation", false);
             }
         });
