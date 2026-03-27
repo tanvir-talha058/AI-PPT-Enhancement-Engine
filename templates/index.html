@@ -4,9 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AI PPT Enhancement Engine</title>
+    <meta name="description" content="AI-powered PowerPoint enhancement for executive-ready decks.">
+    <meta name="theme-color" content="#0f3d91">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%230d2f6d'/><path d='M90 24l10 30 30 10-30 10-10 30-10-30-30-10 30-10z' fill='%233b82f6'/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
@@ -16,20 +19,21 @@
     <main class="shell">
         <section class="hero-panel">
             <div class="hero-copy">
-                <p class="eyebrow">✨ AI-Powered Enhancement</p>
-                <h1>Transform your decks into compelling narratives</h1>
+                <p class="eyebrow">Professional Deck Enhancement</p>
+                <h1>Turn rough presentations into boardroom-ready stories.</h1>
                 <p class="lede">
-                    Instantly elevate your PowerPoint presentations with AI-driven content enhancement. 
-                    Tighten messaging, strengthen language, and maintain perfect formatting—all automatically.
-                    Perfect for boardroom pitches, client proposals, and executive briefings.
+                    Upload your PowerPoint deck and let the engine improve wording, tighten structure,
+                    and preserve layout fidelity for a polished final presentation.
                 </p>
 
                 <div class="hero-actions">
                     <a class="hero-link" href="#workspace">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="margin-right: 8px;">
-                            <path d="M10 1v13m6-6l-6 6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        Start Enhancing
+                        <span class="icon-shell" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M12 4v12m0 0 5-5m-5 5-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                        <span>Start Enhancing</span>
                     </a>
                     <div class="mode-chip">
                         <span class="mode-dot"></span>
@@ -37,21 +41,18 @@
                     </div>
                 </div>
 
-                <div class="signal-grid">
-                    <article class="signal-card">
-                        <span class="signal-kicker">🎯 Content Refinement</span>
-                        <strong>Smarter messaging</strong>
-                        <p>Eliminate redundancy, strengthen arguments, and perfect your executive tone.</p>
+                <div class="trust-strip" aria-label="Platform strengths">
+                    <article class="trust-card">
+                        <span class="trust-value">Format-safe</span>
+                        <span class="trust-label">Layout preservation</span>
                     </article>
-                    <article class="signal-card">
-                        <span class="signal-kicker">🔒 Format Protection</span>
-                        <strong>Pixel-perfect output</strong>
-                        <p>Your slide structure, formatting, and design stay exactly as intended.</p>
+                    <article class="trust-card">
+                        <span class="trust-value">Real-time</span>
+                        <span class="trust-label">Progress updates</span>
                     </article>
-                    <article class="signal-card">
-                        <span class="signal-kicker">⚡ Instant Results</span>
-                        <strong>Minutes, not hours</strong>
-                        <p>AI processing with real-time status updates and one-click download.</p>
+                    <article class="trust-card">
+                        <span class="trust-value">Professional</span>
+                        <span class="trust-label">Executive-ready tone</span>
                     </article>
                 </div>
             </div>
@@ -65,27 +66,32 @@
                     </div>
 
                     <div class="preview-slide">
-                        <div class="preview-header">
-                            <div>
-                                <div class="preview-label">Before</div>
-                                <p class="preview-subtitle">Original slide language</p>
+                        <div class="preview-column">
+                            <div class="preview-header">
+                                <div>
+                                    <div class="preview-label">Before</div>
+                                    <p class="preview-subtitle">Original slide language</p>
+                                </div>
+                                <div class="preview-badge">Source</div>
                             </div>
-                            <div class="preview-badge">Live preview</div>
-                        </div>
-                        <div class="preview-card muted">
-                            <div id="before-lines" class="preview-text-list"></div>
+                            <div class="preview-card muted">
+                                <div id="before-lines" class="preview-text-list"></div>
+                            </div>
                         </div>
 
                         <div class="preview-arrow">Refined</div>
 
-                        <div class="preview-header">
-                            <div>
-                                <div class="preview-label">After</div>
-                                <p class="preview-subtitle">Enhanced slide language</p>
+                        <div class="preview-column">
+                            <div class="preview-header">
+                                <div>
+                                    <div class="preview-label">After</div>
+                                    <p class="preview-subtitle">Enhanced slide language</p>
+                                </div>
+                                <div class="preview-badge preview-badge-accent">Output</div>
                             </div>
-                        </div>
-                        <div class="preview-card">
-                            <div id="after-lines" class="preview-text-list"></div>
+                            <div class="preview-card">
+                                <div id="after-lines" class="preview-text-list"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -95,34 +101,42 @@
         <section id="workspace" class="workspace">
             <div class="section-heading">
                 <div>
-                    <p class="section-label">How it Works</p>
-                    <h2>Three simple steps to polish perfection</h2>
+                    <p class="section-label">Workflow</p>
+                    <h2>Upload once. Review progress. Download the improved deck.</h2>
                 </div>
                 <p class="section-copy">
-                    Upload your PowerPoint, watch the AI work its magic, and download your enhanced deck. 
-                    No setup required—just drop your file and let our engine refine your message.
+                    Built for proposal teams, account leads, consultants, and operators who need sharper slides
+                    without rebuilding formatting by hand.
                 </p>
             </div>
 
             <div class="workspace-grid">
                 <section class="upload-panel">
-                    <form id="upload-form" class="upload-form">
+                    <div class="panel-head">
+                        <p class="panel-kicker">Upload</p>
+                        <h3>Enhance your presentation</h3>
+                        <p class="panel-copy">Drop a `.pptx` file below. The engine will keep your deck structure intact while improving the content.</p>
+                    </div>
+
+                    <form id="upload-form" class="upload-form" novalidate>
                         <label for="ppt-file" id="dropzone" class="dropzone">
-                            <input id="ppt-file" name="file" type="file" accept=".pptx" required>
-                            <span class="dropzone-icon">📊 PPTX</span>
+                            <input id="ppt-file" name="file" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" required>
+                            <span class="dropzone-icon">PPTX</span>
                             <span class="dropzone-title">Drop your presentation here</span>
-                            <span class="dropzone-copy">or click to select a file (up to 50MB)</span>
+                            <span class="dropzone-copy">or click to browse for a PowerPoint file up to 50MB</span>
                             <span id="file-name" class="file-name">No file selected</span>
                         </label>
 
-                        <div class="form-row">
-                            <button id="submit-button" type="submit">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="margin-right: 8px;">
-                                    <path d="M9 12l2 2 4-4m7 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                Enhance My Presentation
+                        <div class="form-row" id="form-actions">
+                            <button id="submit-button" class="primary-button" type="submit">
+                                <span class="button-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 4l2.2 5.8L20 12l-5.8 2.2L12 20l-2.2-5.8L4 12l5.8-2.2L12 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                                <span id="submit-button-label">Enhance My Presentation</span>
                             </button>
-                            <p class="form-note">💡 Works best with presentations under 10MB. All formats preserved during enhancement.</p>
+                            <p class="form-note">Best results come from presentations under 10MB. All layout, design, and formatting are preserved.</p>
                         </div>
                     </form>
                 </section>
@@ -130,43 +144,49 @@
                 <aside class="insight-panel">
                     <div id="status-card" class="status-card hidden" aria-live="polite">
                         <div class="status-header">
-                            <p class="status-label">⚙️ Processing</p>
+                            <div>
+                                <p class="status-label">Processing</p>
+                                <p id="status-text" class="status-text">Waiting to start AI enhancement...</p>
+                            </div>
                             <span id="status-pill" class="status-pill">Queued</span>
                         </div>
 
-                        <p id="status-text" class="status-text">Waiting to start AI enhancement...</p>
-
-                        <div class="progress-track">
+                        <div class="progress-track" aria-hidden="true">
                             <div id="progress-bar" class="progress-bar"></div>
                         </div>
 
-                        <a id="download-link" class="download-link hidden" href="#">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 6px;">
-                                <path d="M12 2v13m0 0l-4-4m4 4l4-4m-7+8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            Download Your Enhanced Deck
-                        </a>
-                        <p id="error-text" class="error-text hidden"></p>
+                        <div class="status-actions">
+                            <a id="download-link" class="download-link hidden" href="#">
+                                <span class="button-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                                <span>Download Enhanced Deck</span>
+                            </a>
+                        </div>
+
+                        <div id="error-text" class="error-text hidden" role="alert"></div>
                     </div>
 
                     <div class="insight-stack">
                         <article class="mini-panel">
-                            <p class="mini-label">✨ What Gets Improved</p>
+                            <p class="mini-label">What Improves</p>
                             <ul class="mini-list">
-                                <li>Tighten verbose bullets into clear, punchy messages</li>
-                                <li>Shift passive voice to direct, commanding language</li>
-                                <li>Maintain perfect alignment with your slide structure</li>
-                                <li>Preserve all formatting, colors, and design elements</li>
+                                <li>Tighter, more direct messaging</li>
+                                <li>Cleaner executive tone and phrasing</li>
+                                <li>Better readability without layout drift</li>
+                                <li>Professional language across the deck</li>
                             </ul>
                         </article>
 
                         <article class="mini-panel">
-                            <p class="mini-label">🎯 Perfect For</p>
+                            <p class="mini-label">Best Fit</p>
                             <ul class="mini-list">
-                                <li>Executive boardroom presentations</li>
+                                <li>Leadership updates and board materials</li>
                                 <li>Client proposals and pitch decks</li>
-                                <li>Internal strategy updates</li>
-                                <li>Professional reports and briefings</li>
+                                <li>Internal strategy reviews</li>
+                                <li>Consulting and project readouts</li>
                             </ul>
                         </article>
                     </div>
@@ -181,6 +201,7 @@
         const fileName = document.getElementById("file-name");
         const dropzone = document.getElementById("dropzone");
         const submitButton = document.getElementById("submit-button");
+        const submitButtonLabel = document.getElementById("submit-button-label");
         const statusCard = document.getElementById("status-card");
         const statusText = document.getElementById("status-text");
         const statusPill = document.getElementById("status-pill");
@@ -189,17 +210,19 @@
         const errorText = document.getElementById("error-text");
         const beforeLines = document.getElementById("before-lines");
         const afterLines = document.getElementById("after-lines");
+        const formActions = document.getElementById("form-actions");
 
         const defaultPreview = {{ default_preview|tojson }};
         const MAX_FILE_SIZE_MB = 50;
         const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-        
-        let currentJobId = null;
+        const POLL_INTERVAL_MS = 1500;
+
         let pollingActive = false;
+        let pollTimer = null;
 
         const progressByStatus = {
-            queued: "18%",
-            started: "62%",
+            queued: "16%",
+            started: "64%",
             finished: "100%",
             failed: "100%"
         };
@@ -207,29 +230,257 @@
         const labelByStatus = {
             queued: "Queued",
             started: "Enhancing",
-            finished: "Complete ✓",
+            finished: "Complete",
             failed: "Failed"
         };
 
         renderPreview(defaultPreview);
 
-        fileInput.addEventListener("change", () => {
-            if (fileInput.files.length) {
-                const file = fileInput.files[0];
-                fileName.textContent = file.name;
-                
-                if (file.size > MAX_FILE_SIZE_BYTES) {
-                    fileName.style.color = "var(--red)";
-                    fileName.textContent += ` (${(file.size / 1024 / 1024).toFixed(1)}MB - too large!)`;
-                    submitButton.disabled = true;
-                } else {
-                    fileName.style.color = "inherit";
-                    submitButton.disabled = false;
-                }
-            } else {
-                fileName.textContent = "No file selected";
-                submitButton.disabled = false;
+        function resetPolling() {
+            pollingActive = false;
+            if (pollTimer) {
+                window.clearTimeout(pollTimer);
+                pollTimer = null;
             }
+        }
+
+        function setSubmitState(label, disabled) {
+            submitButtonLabel.textContent = label;
+            submitButton.disabled = disabled;
+            submitButton.setAttribute("aria-busy", disabled ? "true" : "false");
+        }
+
+        function safeLower(value) {
+            return String(value || "").toLowerCase();
+        }
+
+        async function readJson(response) {
+            const text = await response.text();
+            if (!text) {
+                return {};
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch (_error) {
+                return { error: "Unexpected server response." };
+            }
+        }
+
+        function updateSelectedFile(file) {
+            if (!file) {
+                fileName.textContent = "No file selected";
+                fileName.style.color = "inherit";
+                submitButton.disabled = false;
+                return false;
+            }
+
+            const extension = file.name.split(".").pop()?.toLowerCase();
+            const isPptx = extension === "pptx";
+            fileName.textContent = file.name;
+
+            if (!isPptx) {
+                fileName.style.color = "var(--red)";
+                fileName.textContent += " (invalid file type)";
+                submitButton.disabled = true;
+                return false;
+            }
+
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                fileName.style.color = "var(--red)";
+                fileName.textContent += ` (${(file.size / 1024 / 1024).toFixed(1)}MB - too large)`;
+                submitButton.disabled = true;
+                return false;
+            }
+
+            fileName.style.color = "inherit";
+            submitButton.disabled = false;
+            return true;
+        }
+
+        function resetStatusCard() {
+            downloadLink.classList.add("hidden");
+            errorText.classList.add("hidden");
+            errorText.replaceChildren();
+            progressBar.classList.remove("is-error");
+        }
+
+        function removeCancelButton() {
+            const cancelBtn = document.getElementById("cancel-button");
+            if (cancelBtn) {
+                cancelBtn.remove();
+            }
+        }
+
+        function appendErrorLine(text, isStrong = false) {
+            const line = document.createElement("p");
+            line.className = "error-line";
+
+            if (isStrong) {
+                const strong = document.createElement("strong");
+                strong.textContent = text;
+                line.appendChild(strong);
+            } else {
+                line.textContent = text;
+            }
+
+            errorText.appendChild(line);
+        }
+
+        function showError(message) {
+            resetPolling();
+            statusCard.classList.remove("hidden");
+            statusPill.textContent = "Failed";
+            statusText.textContent = "Something went wrong during processing. Review the details below and try again.";
+            errorText.replaceChildren();
+
+            const normalized = safeLower(message);
+            if (normalized.includes("rate limit")) {
+                appendErrorLine("Rate limit reached.", true);
+                appendErrorLine("Please wait a little and try again.");
+            } else if (normalized.includes("provider") && normalized.includes("failed")) {
+                appendErrorLine("No working AI provider is currently available.", true);
+                appendErrorLine("Configure Gemini, OpenRouter, or another supported provider and retry.");
+            } else if (normalized.includes("not configured") || normalized.includes("api key")) {
+                appendErrorLine("AI provider configuration is incomplete.", true);
+                appendErrorLine("Add valid API credentials to your environment configuration.");
+            } else if (normalized.includes("file") || normalized.includes("pptx")) {
+                appendErrorLine("There is a problem with the uploaded file.", true);
+                appendErrorLine("Use a valid .pptx file and keep it under 50MB.");
+            } else {
+                appendErrorLine("Error", true);
+                appendErrorLine(message || "Unexpected error.");
+            }
+
+            errorText.classList.remove("hidden");
+            progressBar.style.width = "100%";
+            progressBar.classList.add("is-error");
+            removeCancelButton();
+            setSubmitState("Enhance My Presentation", false);
+        }
+
+        function renderPreview(preview) {
+            beforeLines.replaceChildren();
+            afterLines.replaceChildren();
+
+            const before = Array.isArray(preview?.before) && preview.before.length
+                ? preview.before
+                : ["No source text available."];
+            const after = Array.isArray(preview?.after) && preview.after.length
+                ? preview.after
+                : ["No enhanced text available yet."];
+
+            before.forEach((line) => beforeLines.appendChild(createPreviewItem(line, false)));
+            after.forEach((line) => afterLines.appendChild(createPreviewItem(line, true)));
+        }
+
+        function createPreviewItem(text, isAccent) {
+            const item = document.createElement("p");
+            item.className = isAccent ? "preview-text-item is-accent" : "preview-text-item";
+            item.textContent = text;
+            return item;
+        }
+
+        function addCancelButton(jobId) {
+            removeCancelButton();
+
+            const cancelBtn = document.createElement("button");
+            cancelBtn.id = "cancel-button";
+            cancelBtn.className = "secondary-button danger-button";
+            cancelBtn.type = "button";
+
+            const cancelIcon = document.createElement("span");
+            cancelIcon.className = "button-icon button-icon-text";
+            cancelIcon.setAttribute("aria-hidden", "true");
+            cancelIcon.textContent = "x";
+
+            const cancelLabel = document.createElement("span");
+            cancelLabel.textContent = "Cancel Job";
+
+            cancelBtn.append(cancelIcon, cancelLabel);
+            cancelBtn.addEventListener("click", async (event) => {
+                event.preventDefault();
+                cancelBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`/job/${jobId}`, { method: "DELETE" });
+                    const payload = await readJson(response);
+                    if (!response.ok) {
+                        throw new Error(payload.error || "Could not cancel job.");
+                    }
+
+                    resetPolling();
+                    statusPill.textContent = "Cancelled";
+                    statusText.textContent = "The job was cancelled before completion.";
+                    progressBar.style.width = "0%";
+                    cancelBtn.remove();
+                } catch (error) {
+                    showError(error.message);
+                }
+            });
+
+            formActions.appendChild(cancelBtn);
+        }
+
+        async function pollStatus(jobId) {
+            resetPolling();
+            pollingActive = true;
+            let pollCount = 0;
+            const maxPolls = 24 * 60 * 60 / (POLL_INTERVAL_MS / 1000);
+
+            const poll = async () => {
+                if (!pollingActive || pollCount++ > maxPolls) {
+                    if (pollingActive) {
+                        showError("Job polling timeout.");
+                    }
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/status/${jobId}`, {
+                        headers: { "Accept": "application/json" }
+                    });
+                    const payload = await readJson(response);
+                    if (!response.ok) {
+                        throw new Error(payload.error || "Unable to fetch job status.");
+                    }
+
+                    const status = payload.status;
+                    statusPill.textContent = labelByStatus[status] || "Running";
+                    progressBar.style.width = progressByStatus[status] || "48%";
+
+                    const statusMessages = {
+                        queued: "Your deck is queued for processing.",
+                        started: "The AI engine is refining slide language and structure.",
+                        finished: "Your enhanced presentation is ready.",
+                        default: "Processing your presentation..."
+                    };
+                    statusText.textContent = statusMessages[status] || statusMessages.default;
+
+                    if (status === "finished" && payload.result) {
+                        downloadLink.href = payload.result.download_url;
+                        downloadLink.classList.remove("hidden");
+                        renderPreview(payload.result.preview || defaultPreview);
+                        resetPolling();
+                        removeCancelButton();
+                        return;
+                    }
+
+                    if (status === "failed") {
+                        throw new Error(payload.error || "Processing failed.");
+                    }
+
+                    pollTimer = window.setTimeout(poll, POLL_INTERVAL_MS);
+                } catch (error) {
+                    showError(error.message);
+                }
+            };
+
+            await poll();
+        }
+
+        fileInput.addEventListener("change", () => {
+            updateSelectedFile(fileInput.files[0]);
         });
 
         ["dragenter", "dragover"].forEach((eventName) => {
@@ -252,41 +503,31 @@
             }
 
             fileInput.files = event.dataTransfer.files;
-            const file = event.dataTransfer.files[0];
-            fileName.textContent = file.name;
-            
-            if (file.size > MAX_FILE_SIZE_BYTES) {
-                fileName.style.color = "var(--red)";
-                fileName.textContent += ` (${(file.size / 1024 / 1024).toFixed(1)}MB - too large!)`;
-                submitButton.disabled = true;
-            } else {
-                fileName.style.color = "inherit";
-                submitButton.disabled = false;
-            }
+            updateSelectedFile(event.dataTransfer.files[0]);
         });
 
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
+            resetPolling();
+            removeCancelButton();
 
             if (!fileInput.files.length) {
+                showError("Please choose a .pptx file before submitting.");
                 return;
             }
-            
+
             const file = fileInput.files[0];
-            if (file.size > MAX_FILE_SIZE_BYTES) {
-                showError(`File is too large. Maximum size is ${MAX_FILE_SIZE_MB}MB.`);
+            if (!updateSelectedFile(file)) {
+                showError(`Use a valid .pptx file under ${MAX_FILE_SIZE_MB}MB.`);
                 return;
             }
 
             const formData = new FormData();
             formData.append("file", file);
 
-            submitButton.disabled = true;
-            submitButton.textContent = "Uploading...";
+            setSubmitState("Uploading...", true);
             statusCard.classList.remove("hidden");
-            downloadLink.classList.add("hidden");
-            errorText.classList.add("hidden");
-            progressBar.classList.remove("is-error");
+            resetStatusCard();
             statusPill.textContent = "Uploading";
             statusText.textContent = "Uploading presentation...";
             progressBar.style.width = "10%";
@@ -294,197 +535,29 @@
             try {
                 const response = await fetch("/upload", {
                     method: "POST",
-                    body: formData
+                    body: formData,
+                    headers: { "Accept": "application/json" }
                 });
-
-                const payload = await response.json();
+                const payload = await readJson(response);
                 if (!response.ok) {
-                    throw new Error(payload.error || "Upload failed");
+                    throw new Error(payload.error || "Upload failed.");
                 }
 
-                currentJobId = payload.job_id;
                 statusPill.textContent = "Queued";
-                statusText.textContent = `📋 Your presentation is in the queue. Processing with ${payload.mode} mode using our AI enhancement engine.`;
-                progressBar.style.width = "18%";
-                
-                // Add cancel button
-                addCancelButton(payload.job_id);
-                
-                pollStatus(payload.job_id);
+                statusText.textContent = `Your presentation is in the ${payload.mode} queue and ready for enhancement.`;
+                progressBar.style.width = "16%";
+
+                if (payload.can_cancel) {
+                    addCancelButton(payload.job_id);
+                }
+
+                await pollStatus(payload.job_id);
             } catch (error) {
                 showError(error.message);
             } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = "Enhance Presentation";
+                setSubmitState("Enhance My Presentation", false);
             }
         });
-
-        function addCancelButton(jobId) {
-            const existing = document.getElementById("cancel-button");
-            if (existing) {
-                existing.remove();
-            }
-            
-            const cancelBtn = document.createElement("button");
-            cancelBtn.id = "cancel-button";
-            cancelBtn.type = "button";
-            cancelBtn.textContent = "Cancel Job";
-            cancelBtn.style.cssText = "margin-left: 10px; background: var(--red); color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;";
-            cancelBtn.onclick = async (e) => {
-                e.preventDefault();
-                cancelBtn.disabled = true;
-                cancelBtn.textContent = "Cancelling...";
-                
-                try {
-                    const response = await fetch(`/job/${jobId}`, {
-                        method: "DELETE"
-                    });
-                    
-                    if (response.ok) {
-                        pollingActive = false;
-                        statusPill.textContent = "Cancelled";
-                        statusText.textContent = "Job has been cancelled.";
-                        cancelBtn.remove();
-                    } else {
-                        throw new Error("Could not cancel job");
-                    }
-                } catch (error) {
-                    showError(`Cancel failed: ${error.message}`);
-                    cancelBtn.disabled = false;
-                    cancelBtn.textContent = "Cancel Job";
-                }
-            };
-            
-            const actionContainer = document.querySelector(".form-row");
-            if (actionContainer) {
-                actionContainer.appendChild(cancelBtn);
-            }
-        }
-
-        async function pollStatus(jobId) {
-            pollingActive = true;
-            let pollCount = 0;
-            const maxPolls = 24 * 60 * 60 / 1.5; // 24 hours at 1.5s interval
-            
-            const poll = async () => {
-                if (!pollingActive || pollCount++ > maxPolls) {
-                    if (!pollingActive) {
-                        logger.info("Polling stopped by user");
-                    } else {
-                        showError("Job polling timeout (24 hours exceeded)");
-                    }
-                    return;
-                }
-                
-                try {
-                    const response = await fetch(`/status/${jobId}`);
-                    const payload = await response.json();
-                    if (!response.ok) {
-                        throw new Error(payload.error || "Unable to fetch job status");
-                    }
-
-                    const status = payload.status;
-                    statusPill.textContent = labelByStatus[status] || "Running";
-                    
-                    const statusMessages = {
-                        queued: "📋 Your deck is queued for processing. Sit tight—we'll start enhancement shortly.",
-                        started: "🚀 AI is now refining your presentation content. Analyzing and improving each slide...",
-                        finished: "✅ All done! Your enhanced presentation is ready. Click the button below to download your polished deck.",
-                        default: "⚙️ Processing your presentation with advanced AI enhancement..."
-                    };
-                    
-                    statusText.textContent = statusMessages[status] || statusMessages.default;
-                    progressBar.style.width = progressByStatus[status] || "45%";
-
-                    if (status === "finished" && payload.result) {
-                        downloadLink.href = payload.result.download_url;
-                        downloadLink.classList.remove("hidden");
-                        statusText.textContent = "🎉 Perfect! Your enhanced presentation is ready to download and use immediately.";
-                        renderPreview(payload.result.preview || defaultPreview);
-                        pollingActive = false;
-                        removeCancelButton();
-                        return;
-                    }
-
-                    if (status === "failed") {
-                        throw new Error(payload.error || "Processing failed");
-                    }
-
-                    window.setTimeout(poll, 1500);
-                } catch (error) {
-                    showError(error.message);
-                    pollingActive = false;
-                }
-            };
-
-            poll();
-        }
-
-        function removeCancelButton() {
-            const cancelBtn = document.getElementById("cancel-button");
-            if (cancelBtn) {
-                cancelBtn.remove();
-            }
-        }
-
-        function renderPreview(preview) {
-            beforeLines.innerHTML = "";
-            afterLines.innerHTML = "";
-
-            const before = Array.isArray(preview.before) && preview.before.length ? preview.before : ["No source text available."];
-            const after = Array.isArray(preview.after) && preview.after.length ? preview.after : ["No enhanced text available yet."];
-
-            before.forEach((line) => beforeLines.appendChild(createPreviewItem(line, false)));
-            after.forEach((line) => afterLines.appendChild(createPreviewItem(line, true)));
-        }
-
-        function createPreviewItem(text, isAccent) {
-            const item = document.createElement("p");
-            item.className = isAccent ? "preview-text-item is-accent" : "preview-text-item";
-            item.textContent = text;
-            return item;
-        }
-
-        function showError(message) {
-            statusPill.textContent = "Failed";
-            statusText.textContent = "⚠️ Oops! Something went wrong during processing. The team has been notified.";
-            
-            // Detect common errors and provide helpful guidance
-            let helpText = `<strong>Error:</strong> ${message}`;
-            if (message.includes("All configured AI providers failed")) {
-                helpText = (
-                    "❌ <strong>No AI providers are available.</strong> " +
-                    "Please configure at least one AI provider (Gemini, OpenRouter, or HuggingFace). " +
-                    "See the setup documentation for step-by-step instructions."
-                );
-            } else if (message.includes("Quota exceeded") || message.includes("rate limit")) {
-                helpText = (
-                    "⏱️ <strong>AI provider quota exceeded.</strong> " +
-                    "Your current provider has hit its rate limit. " +
-                    "Try again in a few moments, or configure OpenRouter as a backup provider in your .env file."
-                );
-            } else if (message.includes("not configured")) {
-                helpText = (
-                    "🔑 <strong>Missing API key.</strong> " +
-                    "Please configure an AI provider by adding API keys to your .env file. " +
-                    "Recommended: Start with OpenRouter or Gemini for best results."
-                );
-            } else if (message.includes("File")) {
-                helpText = (
-                    "📁 <strong>File issue detected.</strong> " +
-                    "- Ensure your file is a valid .pptx (PowerPoint) file<br>" +
-                    "- File size must be under 50MB<br>" +
-                    "- Try re-saving your presentation and uploading again"
-                );
-            }
-            
-            errorText.innerHTML = helpText;
-            errorText.classList.remove("hidden");
-            progressBar.style.width = "100%";
-            progressBar.classList.add("is-error");
-            pollingActive = false;
-            removeCancelButton();
-        }
     </script>
 </body>
 </html>
