@@ -11,11 +11,33 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-EvRWyO9wgHHhZj8/hVv0jBjR3QH+XvNlY5cLxyLWbJvHlHE0nV8bLXPCj+EJ2Aq9bUxQwvO0pO1tMxj8Z4cJQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=2">
 </head>
 <body>
     <div class="page-glow page-glow-left"></div>
     <div class="page-glow page-glow-right"></div>
+    <div id="toast-container" class="toast-container"></div>
+
+    <header class="site-header">
+        <div class="shell header-shell">
+            <a class="brand-mark" href="/">ArcSlide Studio</a>
+            <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
+                <a href="#workspace">Workflow</a>
+                <a href="#insights">Use cases</a>
+                <a href="#status-card">Status</a>
+                <a class="ghost-button mobile-only" href="#workspace">Start enhancing</a>
+            </nav>
+            <div class="header-actions">
+                <button id="mode-toggle" class="mode-toggle" aria-label="Toggle dark mode">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <a class="ghost-button desktop-only" href="#workspace">Start enhancing</a>
+                <button id="mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Toggle menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
 
     <main class="shell">
         <section class="hero-panel">
@@ -42,6 +64,24 @@
                     </div>
                 </div>
 
+                <div class="hero-metrics" aria-label="Deployment context">
+                    <article class="metric-card">
+                        <p class="metric-label">Queue mode</p>
+                        <p class="metric-value">{{ queue_mode|capitalize }}</p>
+                        <p class="metric-subtext">Managed scheduler</p>
+                    </article>
+                    <article class="metric-card">
+                        <p class="metric-label">Model</p>
+                        <p class="metric-value">{{ ai_provider }}</p>
+                        <p class="metric-subtext">Configured AI provider</p>
+                    </article>
+                    <article class="metric-card">
+                        <p class="metric-label">Turnaround</p>
+                        <p class="metric-value">&lt; 2 min</p>
+                        <p class="metric-subtext">Avg for 20-slide deck</p>
+                    </article>
+                </div>
+
                 <div class="trust-strip" aria-label="Platform strengths">
                     <article class="trust-card">
                         <span class="trust-value">Format-safe</span>
@@ -64,6 +104,14 @@
                         <span></span>
                         <span></span>
                         <span></span>
+                    </div>
+
+                    <div class="preview-context">
+                        <div>
+                            <p class="preview-context-label">Live example</p>
+                            <p class="preview-context-value">Gemini 2.0 Flash</p>
+                        </div>
+                        <span class="preview-pill">Realtime view</span>
                     </div>
 
                     <div class="preview-slide">
@@ -142,7 +190,7 @@
                     </form>
                 </section>
 
-                <aside class="insight-panel">
+                <aside class="insight-panel" id="insights">
                     <div id="status-card" class="status-card hidden" aria-live="polite">
                         <div class="status-header">
                             <div>
@@ -166,8 +214,6 @@
                                 <span>Download Enhanced Deck</span>
                             </a>
                         </div>
-
-                        <div id="error-text" class="error-text hidden" role="alert" aria-live="assertive"></div>
                     </div>
 
                     <div class="insight-stack">
@@ -212,6 +258,66 @@
         const beforeLines = document.getElementById("before-lines");
         const afterLines = document.getElementById("after-lines");
         const formActions = document.getElementById("form-actions");
+        const modeToggle = document.getElementById("mode-toggle");
+        const mobileNavToggle = document.getElementById("mobile-nav-toggle");
+        const primaryNav = document.getElementById("primary-nav");
+
+        // Dark Mode Logic
+        const currentMode = localStorage.getItem("mode") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        if (currentMode === "dark") document.documentElement.classList.add("dark");
+        updateModeIcon();
+
+        modeToggle.addEventListener("click", () => {
+            document.documentElement.classList.toggle("dark");
+            const mode = document.documentElement.classList.contains("dark") ? "dark" : "light";
+            localStorage.setItem("mode", mode);
+            updateModeIcon();
+        });
+
+        function updateModeIcon() {
+            const isDark = document.documentElement.classList.contains("dark");
+            modeToggle.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        }
+
+        // Mobile Nav Logic
+        mobileNavToggle.addEventListener("click", () => {
+            primaryNav.classList.toggle("is-open");
+            mobileNavToggle.innerHTML = primaryNav.classList.contains("is-open") 
+                ? '<i class="fa-solid fa-xmark"></i>' 
+                : '<i class="fa-solid fa-bars"></i>';
+        });
+
+        // Close nav on click
+        primaryNav.querySelectorAll("a").forEach(link => {
+            link.addEventListener("click", () => {
+                primaryNav.classList.remove("is-open");
+                mobileNavToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+            });
+        });
+
+        function showToast(message, type = "info", duration = 5000) {
+            const container = document.getElementById("toast-container");
+            const toast = document.createElement("div");
+            toast.className = `toast toast-${type}`;
+            
+            const icons = {
+                success: '<i class="fa-solid fa-circle-check"></i>',
+                error: '<i class="fa-solid fa-circle-exclamation"></i>',
+                info: '<i class="fa-solid fa-circle-info"></i>'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type]}</div>
+                <div class="toast-content">${message}</div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add("removing");
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
 
         const defaultPreview = {{ default_preview|tojson }};
         const MAX_FILE_SIZE_MB = 50;
@@ -338,28 +444,10 @@
             statusCard.classList.remove("hidden");
             statusPill.className = "status-pill status-pill-error";
             statusPill.textContent = "Failed";
-            statusText.textContent = "Something went wrong during processing. Review the details below and try again.";
-            errorText.replaceChildren();
+            statusText.textContent = "Something went wrong during processing.";
+            
+            showToast(message || "Unexpected error processing the file.", "error");
 
-            const normalized = safeLower(message);
-            if (normalized.includes("rate limit")) {
-                appendErrorLine("Rate limit reached.", true);
-                appendErrorLine("Please wait a little and try again.");
-            } else if (normalized.includes("provider") && normalized.includes("failed")) {
-                appendErrorLine("No working AI provider is currently available.", true);
-                appendErrorLine("Configure Gemini, OpenRouter, or another supported provider and retry.");
-            } else if (normalized.includes("not configured") || normalized.includes("api key")) {
-                appendErrorLine("AI provider configuration is incomplete.", true);
-                appendErrorLine("Add valid API credentials to your environment configuration.");
-            } else if (normalized.includes("file") || normalized.includes("pptx")) {
-                appendErrorLine("There is a problem with the uploaded file.", true);
-                appendErrorLine("Use a valid .pptx file and keep it under 50MB.");
-            } else {
-                appendErrorLine("Error", true);
-                appendErrorLine(message || "Unexpected error.");
-            }
-
-            errorText.classList.remove("hidden");
             progressBar.style.width = "100%";
             progressBar.classList.add("is-error");
             removeCancelButton();
@@ -541,7 +629,7 @@
             const formData = new FormData();
             formData.append("file", file);
 
-            uploadForm.classList.add("is-submitting");
+            form.classList.add("is-submitting");
             setSubmitState("Uploading...", true);
             statusCard.classList.remove("hidden");
             resetStatusCard();
@@ -573,7 +661,7 @@
             } catch (error) {
                 showError(error.message);
             } finally {
-                uploadForm.classList.remove("is-submitting");
+                form.classList.remove("is-submitting");
                 setSubmitState("Enhance My Presentation", false);
             }
         });
