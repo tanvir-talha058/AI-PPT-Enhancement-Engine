@@ -783,6 +783,41 @@ h3 {
     cursor: pointer;
     transition: var(--transition);
     text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.dropzone-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition);
+    z-index: 10;
+}
+
+.dropzone.is-processing .dropzone-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.processing-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--line);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .dropzone:hover,
@@ -1152,6 +1187,20 @@ a, button, input, select, textarea {
         transform: rotate(360deg);
     }
 }
+
+.stagger-in > * {
+    opacity: 0;
+}
+
+.stagger-in.is-visible > * {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.stagger-in.is-visible > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-in.is-visible > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-in.is-visible > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-in.is-visible > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-in.is-visible > *:nth-child(5) { animation-delay: 0.5s; }
 
 @media (max-width: 1080px) {
     .header-shell {

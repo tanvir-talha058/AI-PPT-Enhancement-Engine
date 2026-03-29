@@ -64,7 +64,7 @@
                     </div>
                 </div>
 
-                <div class="hero-metrics" aria-label="Deployment context">
+                <div class="hero-metrics stagger-in" aria-label="Deployment context">
                     <article class="metric-card">
                         <p class="metric-label">Queue mode</p>
                         <p class="metric-value">{{ queue_mode|capitalize }}</p>
@@ -82,7 +82,7 @@
                     </article>
                 </div>
 
-                <div class="trust-strip" aria-label="Platform strengths">
+                <div class="trust-strip stagger-in" aria-label="Platform strengths">
                     <article class="trust-card">
                         <span class="trust-value">Format-safe</span>
                         <span class="trust-label">Layout preservation</span>
@@ -172,8 +172,12 @@
                             <input id="ppt-file" name="file" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" required>
                             <span class="dropzone-icon">PPTX</span>
                             <span class="dropzone-title">Drop your presentation here</span>
-                            <span class="dropzone-copy">or click to browse for a PowerPoint file up to 50MB</span>
+                            <span class="dropzone-copy">or click to browse for a PowerPoint file</span>
                             <span id="file-name" class="file-name">No file selected</span>
+                            <div id="dropzone-overlay" class="dropzone-overlay">
+                                <div class="processing-spinner"></div>
+                                <p id="overlay-text" class="status-text">Uploading...</p>
+                            </div>
                         </label>
 
                         <div class="form-row" id="form-actions">
@@ -254,13 +258,26 @@
         const statusPill = document.getElementById("status-pill");
         const progressBar = document.getElementById("progress-bar");
         const downloadLink = document.getElementById("download-link");
-        const errorText = document.getElementById("error-text");
         const beforeLines = document.getElementById("before-lines");
         const afterLines = document.getElementById("after-lines");
         const formActions = document.getElementById("form-actions");
         const modeToggle = document.getElementById("mode-toggle");
         const mobileNavToggle = document.getElementById("mobile-nav-toggle");
         const primaryNav = document.getElementById("primary-nav");
+        const toastContainer = document.getElementById("toast-container");
+        const dropzoneOverlay = document.getElementById("dropzone-overlay");
+        const overlayText = document.getElementById("overlay-text");
+
+        // Staggered Animation Logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("is-visible");
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll(".stagger-in").forEach(section => observer.observe(section));
 
         // Dark Mode Logic
         const currentMode = localStorage.getItem("mode") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -349,6 +366,7 @@
                 window.clearTimeout(pollTimer);
                 pollTimer = null;
             }
+            dropzone.classList.remove("is-processing");
         }
 
         function setSubmitState(label, disabled) {
@@ -567,6 +585,7 @@
                         renderPreview(payload.result.preview || defaultPreview);
                         resetPolling();
                         removeCancelButton();
+                        showToast("Presentation enhanced successfully!", "success");
                         return;
                     }
 
@@ -631,6 +650,8 @@
 
             form.classList.add("is-submitting");
             setSubmitState("Uploading...", true);
+            dropzone.classList.add("is-processing");
+            overlayText.textContent = "Uploading presentation...";
             statusCard.classList.remove("hidden");
             resetStatusCard();
             statusPill.className = "status-pill status-pill-queued";
