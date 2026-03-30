@@ -22,6 +22,9 @@
     --radius-md: 16px;
     --radius-sm: 12px;
     --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --font-display: "Sora", "Inter", sans-serif;
+    --font-ui: "Inter", "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
 }
 
 .dark {
@@ -52,7 +55,7 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: "Manrope", "Segoe UI", sans-serif;
+    font-family: var(--font-ui);
     color: var(--ink);
     background:
         radial-gradient(circle at top left, rgba(38, 104, 242, 0.18), transparent 24%),
@@ -68,25 +71,29 @@ svg {
 
 button,
 a,
-input {
+    font-family: var(--font-display);
     font: inherit;
 }
 
+    font-weight: 600;
 .page-glow {
     position: fixed;
     pointer-events: none;
     z-index: 0;
     filter: blur(80px);
     opacity: 0.5;
-}
+    font-family: var(--font-ui);
 
 .page-glow-left {
     top: -120px;
+    font-weight: 600;
     left: -90px;
     width: 380px;
     height: 380px;
-    border-radius: 999px;
+    font-family: var(--font-ui);
+    font-size: clamp(1.2rem, 3vw, 1.45rem);
     background: rgba(39, 104, 242, 0.24);
+    font-weight: 600;
 }
 
 .page-glow-right {
@@ -150,7 +157,7 @@ input {
 }
 
 .brand-mark {
-    font-family: "Instrument Serif", Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.6rem;
     font-weight: 600;
     color: var(--ink);
@@ -332,25 +339,29 @@ p {
 
 h1 {
     max-width: 14ch;
-    font-family: "Instrument Serif", Georgia, serif;
-    font-size: clamp(2.4rem, 10vw, 5.2rem);
-    line-height: 1.22;
-    letter-spacing: -0.04em;
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 10vw, 4.4rem);
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+    font-weight: 600;
     color: var(--ink);
     animation: fadeInUp 800ms ease-out;
 }
 
 h2 {
     max-width: 18ch;
-    font-family: "Instrument Serif", Georgia, serif;
+    font-family: var(--font-ui);
     font-size: clamp(1.8rem, 6vw, 3rem);
-    line-height: 1.25;
-    letter-spacing: -0.03em;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    font-weight: 600;
 }
 
 h3 {
+    font-family: var(--font-ui);
     font-size: clamp(1.2rem, 3vw, 1.45rem);
     line-height: 1.35;
+    font-weight: 600;
 }
 
 .lede,
@@ -416,7 +427,8 @@ h3 {
     font-size: 1.5rem;
     font-weight: 800;
     color: var(--ink);
-    font-family: "Instrument Serif", serif;
+    font-family: var(--font-mono);
+    letter-spacing: -0.01em;
 }
 
 .metric-subtext {
@@ -493,6 +505,8 @@ h3 {
 
 .mode-text strong {
     color: var(--ink);
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
 }
 
 .icon-shell,
@@ -581,7 +595,8 @@ h3 {
 .preview-context-value {
     margin: 6px 0 0;
     font-size: 1.05rem;
-    font-weight: 700;
+    font-weight: 600;
+    font-family: var(--font-mono);
 }
 
 .preview-pill {
@@ -590,7 +605,8 @@ h3 {
     background: rgba(38, 104, 242, 0.12);
     color: var(--blue-deep);
     font-size: 0.85rem;
-    font-weight: 700;
+    font-weight: 600;
+    font-family: var(--font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
@@ -853,7 +869,8 @@ input[type="file"] {
     background: linear-gradient(135deg, var(--blue), var(--teal));
     color: #fff;
     font-size: 0.8rem;
-    font-weight: 800;
+    font-weight: 600;
+    font-family: var(--font-mono);
     letter-spacing: 0.1em;
     text-transform: uppercase;
 }
@@ -980,8 +997,9 @@ button[aria-invalid="true"] {
     background: rgba(38, 104, 242, 0.08);
     color: var(--blue-deep);
     font-size: 0.8rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-family: var(--font-mono);
     text-transform: uppercase;
     white-space: nowrap;
     transition: inherit;
