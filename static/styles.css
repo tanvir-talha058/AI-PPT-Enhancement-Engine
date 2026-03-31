@@ -70,30 +70,24 @@ svg {
 }
 
 button,
-a,
-    font-family: var(--font-display);
-    font: inherit;
+a {
+    font-family: inherit;
 }
 
-    font-weight: 600;
 .page-glow {
     position: fixed;
     pointer-events: none;
     z-index: 0;
     filter: blur(80px);
     opacity: 0.5;
-    font-family: var(--font-ui);
+}
 
 .page-glow-left {
     top: -120px;
-    font-weight: 600;
     left: -90px;
     width: 380px;
     height: 380px;
-    font-family: var(--font-ui);
-    font-size: clamp(1.2rem, 3vw, 1.45rem);
     background: rgba(39, 104, 242, 0.24);
-    font-weight: 600;
 }
 
 .page-glow-right {
