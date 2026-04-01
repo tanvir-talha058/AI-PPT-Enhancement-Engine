@@ -45,4 +45,5 @@ def replace_text(source_path: Path, output_path: Path, ai_output: dict[str, list
                     paragraph.text = new_text
                 replacement_index += 1
 
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     presentation.save(str(output_path))

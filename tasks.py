@@ -51,7 +51,8 @@ def process_ppt(file_path: str) -> dict:
         _ai_cache[cache_key] = ai_output
         logger.info(f"Cached AI results with key {cache_key}")
 
-    output_name = f"{source_path.stem}_enhanced_{uuid4().hex[:8]}.pptx"
+    # Use short output name to avoid Windows 260-char path limit
+    output_name = f"enhanced_{uuid4().hex[:8]}.pptx"
     output_path = OUTPUT_FOLDER / output_name
     replace_text(source_path, output_path, ai_output)
     

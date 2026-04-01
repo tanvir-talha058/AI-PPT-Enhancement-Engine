@@ -48,6 +48,10 @@
     box-sizing: border-box;
 }
 
+.hidden {
+    display: none !important;
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -1047,6 +1051,21 @@ button[aria-invalid="true"] {
 
 .progress-bar.is-error {
     background: linear-gradient(90deg, #ef6a78, var(--red));
+}
+
+.status-errors {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(209, 73, 91, 0.2);
+    background: rgba(209, 73, 91, 0.08);
+    color: var(--red);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.error-line {
+    margin: 0;
 }
 
 .status-actions {
