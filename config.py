@@ -77,6 +77,7 @@ def ensure_directories() -> None:
 
 def setup_logging(name: str) -> logging.Logger:
     """Configure and return a logger instance with file and console handlers."""
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger(name)
     logger.setLevel(LOG_LEVEL)
     
