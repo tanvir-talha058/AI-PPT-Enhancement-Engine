@@ -1,5 +1,6 @@
 """Flask API for PPT enhancement."""
 
+import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -534,4 +535,5 @@ if __name__ == "__main__":
     cleanup_thread.start()
     logger.info("Periodic cleanup thread started")
 
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
