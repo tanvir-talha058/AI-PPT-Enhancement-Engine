@@ -16,6 +16,9 @@ from ai_engine import validate_providers
 from cleanup import cleanup_old_files
 from config import (
     ALLOWED_EXTENSIONS,
+    ALLOW_CREATIVE_MODE,
+    DEFAULT_PROCESSING_MODE,
+    ENABLE_VISION_ANALYSIS,
     MAX_FILE_SIZE_BYTES,
     OUTPUT_FOLDER,
     QUEUE_NAME,
@@ -147,7 +150,7 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _create_local_job(job_id: str, file_path: Path) -> None:
+def _create_local_job(job_id: str, file_path: Path, mode: str = "safe") -> None:
     """Create a local job record in memory and database."""
     with local_jobs_lock:
         local_jobs[job_id] = {
@@ -158,14 +161,15 @@ def _create_local_job(job_id: str, file_path: Path) -> None:
             "error": None,
             "created_at": _now_iso(),
             "mode": "threaded",
+            "processing_mode": mode,
             "can_cancel": False,
         }
 
     save_job(job_id, "queued", str(file_path), "threaded")
-    logger.info("Local job %s created for %s", job_id, file_path.name)
+    logger.info("Local job %s created for %s (mode=%s)", job_id, file_path.name, mode)
 
 
-def _run_local_job(job_id: str, file_path: Path) -> None:
+def _run_local_job(job_id: str, file_path: Path, processing_mode: str = "safe") -> None:
     """Execute a local job in a thread."""
     with local_jobs_lock:
         if job_id not in local_jobs:
@@ -173,10 +177,10 @@ def _run_local_job(job_id: str, file_path: Path) -> None:
         local_jobs[job_id]["status"] = "started"
 
     save_job(job_id, "started", str(file_path), "threaded")
-    logger.info("Local job %s started processing", job_id)
+    logger.info("Local job %s started processing (mode=%s)", job_id, processing_mode)
 
     try:
-        result = process_ppt(str(file_path))
+        result = process_ppt(str(file_path), mode=processing_mode)
         with local_jobs_lock:
             if job_id not in local_jobs:
                 return
@@ -202,19 +206,23 @@ def _run_local_job(job_id: str, file_path: Path) -> None:
         logger.error("Local job %s failed: %s", job_id, exc, exc_info=True)
 
 
-def enqueue_job(file_path: Path) -> tuple[str, str]:
+def enqueue_job(file_path: Path, processing_mode: str = "safe") -> tuple[str, str]:
     """Enqueue a job to Redis or local thread pool."""
     if QUEUE_ENABLED and queue is not None:
-        job = queue.enqueue(process_ppt, str(file_path))
+        job = queue.enqueue(process_ppt, str(file_path), mode=processing_mode)
         save_job(job.id, "queued", str(file_path), "redis")
-        logger.info("Job %s enqueued to Redis", job.id)
+        logger.info("Job %s enqueued to Redis (mode=%s)", job.id, processing_mode)
         return job.id, "redis"
 
     job_id = uuid4().hex
-    _create_local_job(job_id, file_path)
-    thread = threading.Thread(target=_run_local_job, args=(job_id, file_path), daemon=True)
+    _create_local_job(job_id, file_path, mode=processing_mode)
+    thread = threading.Thread(
+        target=_run_local_job,
+        args=(job_id, file_path, processing_mode),
+        daemon=True
+    )
     thread.start()
-    logger.info("Job %s queued to local thread pool", job_id)
+    logger.info("Job %s queued to local thread pool (mode=%s)", job_id, processing_mode)
     return job_id, "threaded"
 
 
@@ -260,6 +268,8 @@ def index():
         queue_mode="redis" if QUEUE_ENABLED else "threaded",
         ai_provider=AI_PROVIDER_LABEL,
         default_preview=DEFAULT_PREVIEW,
+        default_processing_mode=DEFAULT_PROCESSING_MODE,
+        allow_creative_mode=ALLOW_CREATIVE_MODE,
     )
 
 
@@ -308,6 +318,30 @@ def check_providers():
     )
 
 
+@app.get("/config/features")
+def get_features():
+    """Get available processing modes and features."""
+    return jsonify({
+        "processing_modes": {
+            "safe": {
+                "label": "Safe Mode",
+                "description": "Preserve slide structure (1-to-1 bullet mapping)",
+                "enabled": True,
+            },
+            "creative": {
+                "label": "Creative Mode",
+                "description": "Intelligent restructuring with layout awareness",
+                "enabled": ALLOW_CREATIVE_MODE,
+            },
+        },
+        "features": {
+            "vision_analysis": ENABLE_VISION_ANALYSIS,
+            "layout_awareness": True,
+        },
+        "default_mode": DEFAULT_PROCESSING_MODE,
+    })
+
+
 @app.post("/upload")
 def upload_ppt():
     """Handle PPT file upload and enqueue processing."""
@@ -325,6 +359,14 @@ def upload_ppt():
     if not is_allowed_file(uploaded_file.filename):
         logger.warning("Upload rejected: invalid extension %s", uploaded_file.filename)
         return _json_error("Only .pptx files are supported.", 400)
+
+    # Get processing mode from request (safe or creative)
+    processing_mode = request.form.get("mode", DEFAULT_PROCESSING_MODE).lower()
+    if processing_mode not in ("safe", "creative"):
+        processing_mode = DEFAULT_PROCESSING_MODE
+    if processing_mode == "creative" and not ALLOW_CREATIVE_MODE:
+        processing_mode = "safe"
+        logger.info("Creative mode requested but not allowed; using safe mode")
 
     content_length = request.content_length
     if content_length and content_length > app.config["MAX_CONTENT_LENGTH"]:
@@ -354,12 +396,14 @@ def upload_ppt():
                 413,
             )
 
-        job_id, mode = enqueue_job(file_path)
-        logger.info("File %s uploaded and queued as %s", original_name, job_id)
+        job_id, queue_mode = enqueue_job(file_path, processing_mode=processing_mode)
+        logger.info("File %s uploaded and queued as %s (processing_mode=%s)",
+                   original_name, job_id, processing_mode)
         return jsonify({
             "job_id": job_id,
-            "mode": mode,
-            "can_cancel": mode == "redis",
+            "mode": queue_mode,
+            "processing_mode": processing_mode,
+            "can_cancel": queue_mode == "redis",
         }), 202
     except Exception as exc:
         logger.error("Upload failed: %s", exc, exc_info=True)

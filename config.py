@@ -68,6 +68,11 @@ HF_API_KEY = os.getenv("HF_API_KEY", "")
 HF_URL = os.getenv("HF_URL", "https://api-inference.huggingface.co/models")
 HF_MODEL = os.getenv("HF_MODEL", "google/flan-t5-large")
 
+# Layout-aware processing modes
+DEFAULT_PROCESSING_MODE = os.getenv("DEFAULT_PROCESSING_MODE", "safe").lower()
+ENABLE_VISION_ANALYSIS = os.getenv("ENABLE_VISION_ANALYSIS", "false").lower() in ("1", "true", "yes")
+ALLOW_CREATIVE_MODE = os.getenv("ALLOW_CREATIVE_MODE", "true").lower() in ("1", "true", "yes")
+
 
 def ensure_directories() -> None:
     UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)

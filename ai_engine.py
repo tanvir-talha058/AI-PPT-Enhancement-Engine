@@ -1,4 +1,4 @@
-"""AI provider integration and prompt management."""
+"""AI provider integration with layout-aware prompting and dual modes."""
 
 import json
 import re
@@ -28,47 +28,43 @@ logger = setup_logging(__name__)
 
 
 def validate_providers() -> list[str]:
-    """
-    Validate which AI providers are configured and available.
-    
-    Returns:
-        List of available provider names
-    """
+    """Validate which AI providers are configured and available."""
     available = []
-    
+
     if GEMINI_API_KEY:
         available.append("Gemini")
         logger.info(f"Gemini configured: {GEMINI_MODEL}")
     else:
         logger.warning("Gemini not configured (GEMINI_API_KEY missing)")
-    
+
     if OPENROUTER_API_KEY:
         available.append("OpenRouter")
         logger.info(f"OpenRouter configured: {OPENROUTER_MODEL}")
     else:
         logger.warning("OpenRouter not configured (OPENROUTER_API_KEY missing)")
-    
+
     if HF_API_KEY:
         available.append("HuggingFace")
         logger.info(f"HuggingFace configured: {HF_MODEL}")
     else:
         logger.warning("HuggingFace not configured (HF_API_KEY missing)")
-    
+
     if not available:
         logger.warning("No external AI providers configured; using local fallback mode")
+        logger.warning("  Set GEMINI_API_KEY, OPENROUTER_API_KEY, or HF_API_KEY for full AI enhancement")
         available.append("LocalFallback")
-    
+
     return available
 
 
-SYSTEM_PROMPT_TEMPLATE = """You are a professional presentation expert.
+SYSTEM_PROMPT_SAFE = """You are a professional presentation expert.
 
-Task:
+Task (SAFE MODE - Structure Preserved):
 - Rewrite each slide's text to sound sharper, clearer, and more executive-ready
 - Keep the meaning unchanged
-- Preserve the same number of bullets or paragraphs for each slide
+- **Preserve the same number of bullets or paragraphs** for each slide (critical)
 - Keep the output length close to the original (+/- 20%)
-- Keep numbers, percentages, dates, named entities, and factual claims intact unless grammar requires tiny edits
+- Keep numbers, percentages, dates, named entities, and factual claims intact
 - Return concise presentation-ready copy, not explanations
 
 Deck guidance:
@@ -77,58 +73,94 @@ Deck guidance:
 Slide guidance:
 {slide_guidance}
 
-Return only valid JSON in this exact shape:
-{{
-  "slide_1": ["...", "..."]
-}}
+Layout guidance:
+{layout_guidance}
+
+Return only valid JSON: {{"slide_1": ["...", "..."]}}
+"""
+
+SYSTEM_PROMPT_CREATIVE = """You are a professional presentation expert and design strategist.
+
+Task (CREATIVE MODE - Intelligent Restructuring Allowed):
+- Improve the presentation narrative, clarity, and visual hierarchy
+- You may reorder, merge, or split bullets if it creates better flow
+- You may adjust emphasis based on the slide's visual hierarchy
+- Preserve the core meaning but optimize for impact
+- Keep the total content within +/- 30% of original length
+- Keep numbers, percentages, dates, named entities intact
+- Return concise presentation-ready copy optimized for the slide's design
+
+Deck guidance:
+{deck_guidance}
+
+Slide guidance:
+{slide_guidance}
+
+Layout guidance:
+{layout_guidance}
+
+Return valid JSON: {{"slide_1": ["...", "..."]}}
+
+When restructuring: explain your reasoning in a comment after the JSON.
 """
 
 
-def _gemini_model_path(model_name: str) -> str:
-    """Format Gemini model name with proper path prefix."""
-    return model_name if model_name.startswith("models/") else f"models/{model_name}"
-
-
 def build_context(slides: list[dict]) -> dict[str, list[str]]:
-    """
-    Convert raw slide data into structured format for AI.
-    
-    Args:
-        slides: List of slide dictionaries from parser
-        
-    Returns:
-        dict mapping slide keys to lists of paragraph text
-    """
+    """Convert raw slide data into structured format for AI."""
     context = {}
     for index, slide in enumerate(slides, start=1):
         context[f"slide_{index}"] = [paragraph["text"] for paragraph in slide["paragraphs"]]
     return context
 
 
-def call_ai(structured_data: dict[str, list[str]]) -> dict[str, list[str]]:
+def build_enriched_context(slides: list[dict]) -> dict[str, dict[str, Any]]:
+    """Build context with layout metadata for layout-aware prompting."""
+    enriched = {}
+    for index, slide in enumerate(slides, start=1):
+        slide_key = f"slide_{index}"
+        enriched[slide_key] = {
+            "text": [p["text"] for p in slide["paragraphs"]],
+            "layout": {
+                "slide_type": slide.get("slide_type", "body"),
+                "element_types": [p.get("element_type", "body") for p in slide["paragraphs"]],
+                "font_sizes": [p.get("font_size", 12) for p in slide["paragraphs"]],
+            },
+        }
+    return enriched
+
+
+def call_ai(
+    structured_data: dict[str, list[str]],
+    mode: str = "safe",
+    enriched_data: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, list[str]]:
     """
     Call AI providers in priority order: Gemini → OpenRouter → HuggingFace.
-    
+
     Args:
         structured_data: Structured slide data from build_context
-        
+        mode: "safe" (preserve structure) or "creative" (allow restructuring)
+        enriched_data: Optional layout-aware data for better prompting
+
     Returns:
         dict of enhanced text per slide
-        
+
     Raises:
         RuntimeError: If all providers fail
     """
     errors = []
-    system_prompt = _build_system_prompt(structured_data)
-    
+    system_prompt = _build_system_prompt(
+        structured_data, mode=mode, enriched_data=enriched_data
+    )
+
     available = validate_providers()
-    
+
     logger.info(f"Available providers: {', '.join(available)}")
     logger.info("Attempting AI providers in order: Gemini, OpenRouter, HuggingFace")
 
     for provider in (_call_gemini, _call_openrouter, _call_huggingface):
         try:
-            logger.info(f"Trying {provider.__name__}...")
+            logger.info(f"Trying {provider.__name__} (mode={mode})...")
             result = provider(structured_data, system_prompt)
             logger.info(f"{provider.__name__} succeeded")
             return result
@@ -235,7 +267,7 @@ def _extract_json_object(text: str) -> dict[str, Any]:
 def _normalize_ai_output(ai_output: dict[str, Any], original: dict[str, list[str]]) -> dict[str, list[str]]:
     """
     Normalize AI output to match input structure.
-    Falls back to original if structure mismatch detected.
+    Falls back to original if structure mismatch detected (for safe mode).
     """
     normalized = {}
     for slide_key, paragraphs in original.items():
@@ -245,7 +277,9 @@ def _normalize_ai_output(ai_output: dict[str, Any], original: dict[str, list[str
 
         cleaned = [str(item).strip() for item in candidate if str(item).strip()]
         if len(cleaned) != len(paragraphs):
-            logger.warning(f"Output mismatch for {slide_key}: expected {len(paragraphs)}, got {len(cleaned)}")
+            logger.warning(
+                f"Output mismatch for {slide_key}: expected {len(paragraphs)}, got {len(cleaned)}"
+            )
             cleaned = paragraphs
         normalized[slide_key] = cleaned
     return normalized
@@ -258,18 +292,7 @@ def _post_with_rate_limit_retry(
     max_retries: int,
     retry_delay_seconds: float,
 ) -> Response:
-    """
-    POST with automatic rate-limit (429) retry handling.
-    
-    Args:
-        url: Target URL
-        payload: JSON payload
-        max_retries: Maximum retry attempts
-        retry_delay_seconds: Base delay between retries (exponential backoff)
-        
-    Returns:
-        Response object
-    """
+    """POST with automatic rate-limit (429) retry handling."""
     last_error: Exception | None = None
 
     for attempt in range(max_retries + 1):
@@ -285,7 +308,9 @@ def _post_with_rate_limit_retry(
                     raise RuntimeError(_build_rate_limit_message(response))
 
                 delay = _next_retry_delay(response, retry_delay_seconds, attempt)
-                logger.warning(f"Rate limited, retrying in {delay}s (attempt {attempt + 1}/{max_retries})")
+                logger.warning(
+                    f"Rate limited, retrying in {delay}s (attempt {attempt + 1}/{max_retries})"
+                )
                 time.sleep(delay)
                 continue
 
@@ -298,7 +323,9 @@ def _post_with_rate_limit_retry(
                     raise RuntimeError(_build_rate_limit_message(exc.response)) from exc
 
                 delay = _next_retry_delay(exc.response, retry_delay_seconds, attempt)
-                logger.warning(f"Rate limited, retrying in {delay}s (attempt {attempt + 1}/{max_retries})")
+                logger.warning(
+                    f"Rate limited, retrying in {delay}s (attempt {attempt + 1}/{max_retries})"
+                )
                 time.sleep(delay)
                 continue
 
@@ -341,12 +368,22 @@ def _build_rate_limit_message(response: Response) -> str:
     )
 
 
-def _build_system_prompt(structured_data: dict[str, list[str]]) -> str:
+def _build_system_prompt(
+    structured_data: dict[str, list[str]],
+    mode: str = "safe",
+    enriched_data: dict[str, dict[str, Any]] | None = None,
+) -> str:
+    """Build system prompt with mode and layout guidance."""
+    base_template = SYSTEM_PROMPT_SAFE if mode == "safe" else SYSTEM_PROMPT_CREATIVE
+
     deck_guidance = _build_deck_guidance(structured_data)
-    slide_guidance = _build_slide_guidance(structured_data)
-    return SYSTEM_PROMPT_TEMPLATE.format(
+    slide_guidance = _build_slide_guidance(structured_data, enriched_data)
+    layout_guidance = _build_layout_guidance(enriched_data) if enriched_data else ""
+
+    return base_template.format(
         deck_guidance=deck_guidance,
         slide_guidance=slide_guidance,
+        layout_guidance=layout_guidance,
     )
 
 
@@ -392,6 +429,7 @@ def _refine_text(text: str) -> str:
 
 
 def _build_deck_guidance(structured_data: dict[str, list[str]]) -> str:
+    """Build deck-level guidance."""
     slide_count = len(structured_data)
     paragraph_count = sum(len(paragraphs) for paragraphs in structured_data.values())
     short_lines = 0
@@ -413,17 +451,21 @@ def _build_deck_guidance(structured_data: dict[str, list[str]]) -> str:
     ]
 
     if short_lines >= max(2, paragraph_count // 3):
-        guidance.append("- Many lines are headline-like or bullet-like, so prefer tight phrasing over full prose.")
+        guidance.append("- Many lines are headline-like or bullet-like, so prefer tight phrasing.")
     if numeric_lines:
         guidance.append("- Preserve all numbers and quantitative statements exactly.")
 
     return "\n".join(guidance)
 
 
-def _build_slide_guidance(structured_data: dict[str, list[str]]) -> str:
+def _build_slide_guidance(
+    structured_data: dict[str, list[str]],
+    enriched_data: dict[str, dict[str, Any]] | None = None,
+) -> str:
+    """Build slide-level guidance."""
     guidance = []
     for slide_key, paragraphs in structured_data.items():
-        non_empty = [str(paragraph).strip() for paragraph in paragraphs if str(paragraph).strip()]
+        non_empty = [str(p).strip() for p in paragraphs if str(p).strip()]
         if not non_empty:
             guidance.append(f"- {slide_key}: leave empty strings untouched.")
             continue
@@ -444,3 +486,46 @@ def _build_slide_guidance(structured_data: dict[str, list[str]]) -> str:
         guidance.append(f"- {slide_key}: " + "; ".join(traits) + ".")
 
     return "\n".join(guidance)
+
+
+def _build_layout_guidance(enriched_data: dict[str, dict[str, Any]] | None) -> str:
+    """Build layout-aware guidance based on visual hierarchy."""
+    if not enriched_data:
+        return ""
+
+    guidance = []
+    for slide_key, data in enriched_data.items():
+        layout = data.get("layout", {})
+        slide_type = layout.get("slide_type", "body")
+        element_types = layout.get("element_types", [])
+
+        if slide_type == "title":
+            guidance.append(
+                f"- {slide_key} (Title): Prioritize compelling, concise messaging. "
+                "Maximize impact with sharp language."
+            )
+        elif slide_type == "agenda":
+            guidance.append(
+                f"- {slide_key} (Agenda): Keep items parallel and scannable. "
+                "Use consistent phrasing."
+            )
+        elif slide_type == "closing":
+            guidance.append(
+                f"- {slide_key} (Closing): End with memorable language. "
+                "Reinforce key takeaways or call-to-action."
+            )
+        else:
+            # Analyze element type distribution
+            has_title = "title" in element_types or "heading" in element_types
+            if has_title:
+                guidance.append(
+                    f"- {slide_key}: Lead with a strong heading. "
+                    "Body text should support and expand."
+                )
+
+    return "\n".join(guidance) if guidance else "No specific layout guidance."
+
+
+def _gemini_model_path(model_name: str) -> str:
+    """Format Gemini model name with proper path prefix."""
+    return model_name if model_name.startswith("models/") else f"models/{model_name}"
